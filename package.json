@@ -1,0 +1,16 @@
+{
+  "name": "cisco-dime",
+  "version": "1.0.0",
+  "description": "A library to pull files from Cisco CUCM via DIME",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Jeremy Worden",
+  "license": "MIT",
+  "dependencies": {
+    "https": "^1.0.0",
+    "util": "^0.12.1",
+    "xml2js": "^0.4.19"
+  }
+}
