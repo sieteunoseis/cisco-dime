@@ -134,7 +134,7 @@ CucmSoapGetSession.prototype.getOneFileResponse = function(file, callback) {
 				callback(null, payload)
 			});
 		}else{
-			callback(res.statusCode, payload)
+			callback('Error: ' + res.statusCode)
 		}
 	});
 
@@ -171,7 +171,7 @@ CucmSoapSelectSession.prototype.selectLogFilesResponse = function(servicelog,tod
 				callback(null, payload)
 			});
 		}else{
-			callback(res.statusCode)
+			callback('Error: ' + res.statusCode)
 		}
 	});
 
@@ -207,7 +207,7 @@ CucmSoapListSession.prototype.listNodeServiceLogsResponse = function(callback) {
 				callback(null, payload)
 			});
 		}else{
-			callback(res.statusCode)
+			callback('Error: ' + res.statusCode)
 		}
 	});
 
