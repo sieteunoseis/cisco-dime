@@ -3,11 +3,11 @@ var multipart = require('./multipart');
 var parseString = require('xml2js').parseString;
 
 module.exports = {
-	getOneFile: function(ipaddress,file) {
-		let cucm = cucmDime.get(ipaddress, settings.cucmuser, settings.cucmpass);
+	getOneFile: function(ipaddress,username,password,file) {
+		let cucm = cucmDime.get(ipaddress,username,password);
 		
 		return new Promise((resolve, reject) => {
-			cucm.GetOneFileResponse(file, function(err, response) {
+			cucm.getOneFileResponse(file, function(err, response) {
 				if (err){
 					reject(err)
 				}
@@ -28,11 +28,11 @@ module.exports = {
 			})
 		})
 	},
-	selectFiles: function(ipaddress,servicelog,todate,fromdate,timezone) {
+	selectFiles: function(ipaddress,username,password,servicelog,todate,fromdate,timezone) {
 		
 		return new Promise(function(resolve, reject) {
 		 	// Do async job
-			let cucm = cucmDime.select(ipaddress, settings.cucmuser, settings.cucmpass);
+			let cucm = cucmDime.select(ipaddress,username,password);
 			
 			cucm.selectLogFilesResponse(servicelog,todate,fromdate,timezone, function(err, response) {
 				if (err){
@@ -55,11 +55,11 @@ module.exports = {
 
 		})			
 	},
-	listFiles: function(ipaddress) {
+	listFiles: function(ipaddress,username,password) {
 		
 		return new Promise(function(resolve, reject) {
 		 	// Do async job
-			let cucm = cucmDime.list(ipaddress, settings.cucmuser, settings.cucmpass);
+			let cucm = cucmDime.list(ipaddress,username,password);
 			
 			cucm.listNodeServiceLogsResponse(function(err, response) {
 				if (err){

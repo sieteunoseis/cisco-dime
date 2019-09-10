@@ -90,7 +90,7 @@ function CucmSoapListSession(cucmServerUrl, cucmUser, cucmPassword) {
 // Array to hold the Session ID's
 var sessionIdArr = []
 
-CucmSoapGetSession.prototype.GetOneFileResponse = function(file, callback) {
+CucmSoapGetSession.prototype.getOneFileResponse = function(file, callback) {
 	var XML = util.format(XML_ENVELOPE, file);
 	var soapBody = Buffer.from(XML);
 	var options = this._OPTIONS;
@@ -144,22 +144,26 @@ CucmSoapSelectSession.prototype.selectLogFilesResponse = function(servicelog,tod
 	options.agent = new https.Agent({ keepAlive: false });
 
 	req = https.request(options, function(res) {
-		var data = [];
-		
-		var payload = {
-			header:'',
-			data:''
+		if (res.statusCode == 200){
+			var data = [];
+			
+			var payload = {
+				header:'',
+				data:''
+			}
+
+			payload.header = res.headers		
+
+			res.on('data', function(chunk) {
+				data.push(chunk);
+			}).on('end', function() {
+				var buffer = Buffer.concat(data);
+				payload.data = buffer		
+				callback(null, payload)
+			});
+		}else{
+			callback(res.statusCode)
 		}
-
-		payload.header = res.headers		
-
-		res.on('data', function(chunk) {
-			data.push(chunk);
-		}).on('end', function() {
-			var buffer = Buffer.concat(data);
-			payload.data = buffer		
-			callback(null, payload)
-		});
 	});
 	req.end(soapBody);
 };
@@ -170,22 +174,26 @@ CucmSoapListSession.prototype.listNodeServiceLogsResponse = function(callback) {
 	options.agent = new https.Agent({ keepAlive: false });
 
 	req = https.request(options, function(res) {
-		var data = [];
-		
-		var payload = {
-			header:'',
-			data:''
+		if (res.statusCode == 200){
+			var data = [];
+			
+			var payload = {
+				header:'',
+				data:''
+			}
+
+			payload.header = res.headers		
+
+			res.on('data', function(chunk) {
+				data.push(chunk);
+			}).on('end', function() {
+				var buffer = Buffer.concat(data);
+				payload.data = buffer		
+				callback(null, payload)
+			});
+		}else{
+			callback(res.statusCode)
 		}
-
-		payload.header = res.headers		
-
-		res.on('data', function(chunk) {
-			data.push(chunk);
-		}).on('end', function() {
-			var buffer = Buffer.concat(data);
-			payload.data = buffer		
-			callback(null, payload)
-		});
 	});
 	req.end(soapBody);
 };

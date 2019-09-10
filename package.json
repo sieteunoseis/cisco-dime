@@ -1,6 +1,6 @@
 {
-  "name": "cisco-dime",
-  "version": "1.0.0",
+  "name": "node-cisco-dime",
+  "version": "1.1.0",
   "description": "A library to pull files from Cisco CUCM via DIME",
   "main": "main.js",
   "scripts": {
@@ -8,6 +8,10 @@
   },
   "author": "Jeremy Worden",
   "license": "MIT",
+  "devDependencies": {
+    "bluebird": "^3.5.5",
+    "fs-extra": "^7.0.1"
+  },
   "dependencies": {
     "https": "^1.0.0",
     "util": "^0.12.1",
