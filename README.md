@@ -19,3 +19,11 @@ then modify whatever you want!
 npm install
 node getOneFileExample.js
 ```
+
+# Acknowledgements
+
+This library is made possible by code used from:
+
+[parse-multipart](https://github.com/freesoftwarefactory/parse-multipart)
+
+I would like to thank Cristian Salazar for making his code available!
