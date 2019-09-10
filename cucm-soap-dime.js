@@ -84,6 +84,7 @@ function CucmSoapListSession(cucmServerUrl, cucmUser, cucmPassword) {
 			'Authorization': 'Basic ' + Buffer.from(cucmUser + ":" + cucmPassword).toString('base64'), 
 			'Content-Type': 'text/xml;charset=UTF-8'
 		},
+		timeout: 3000,
 		rejectUnauthorized: false   // required to accept self-signed certificate
 	}
 }
