@@ -1,8 +1,4 @@
-# node-cisco-dime
-A library to pull files from Cisco CUCM via DIME
-
-
-# Cisco DIME Libarary
+# Cisco DIME Library
 
 Simple library to pull files from a Cisco Unified Communications Manager via DIME.
 
