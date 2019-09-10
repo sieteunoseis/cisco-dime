@@ -26,6 +26,10 @@ module.exports = {
 					}
 				}
 			})
+
+			process.on('uncaughtException', function (err) {
+				reject(err);
+			});	
 		})
 	},
 	selectFiles: function(ipaddress,username,password,servicelog,todate,fromdate,timezone) {
@@ -52,6 +56,10 @@ module.exports = {
 					});
 				}
 			})
+
+			process.on('uncaughtException', function (err) {
+				reject(err);
+			});	
 
 		})			
 	},
@@ -80,6 +88,10 @@ module.exports = {
 					});
 				}
 			})
+
+			process.on('uncaughtException', function (err) {
+				reject(err);
+			});	
 
 		})			
 	}
