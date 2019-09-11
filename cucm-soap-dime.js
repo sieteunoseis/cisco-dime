@@ -54,7 +54,7 @@ function CucmSoapGetSession(cucmServerUrl, cucmUser, cucmPassword) {
 			'Authorization': 'Basic ' + Buffer.from(cucmUser + ":" + cucmPassword).toString('base64'), 
 			'Content-Type': 'text/xml;charset=UTF-8'
 		},
-		timeout: 10000, // Default: 120000 (2 minutes)
+		timeout: 30000, // Default: 120000 (2 minutes)
 		rejectUnauthorized: false   // required to accept self-signed certificate
 	}
 }
@@ -70,7 +70,7 @@ function CucmSoapSelectSession(cucmServerUrl, cucmUser, cucmPassword) {
 			'Authorization': 'Basic ' + Buffer.from(cucmUser + ":" + cucmPassword).toString('base64'), 
 			'Content-Type': 'text/xml;charset=UTF-8'
 		},
-		timeout: 10000, // Default: 120000 (2 minutes)
+		timeout: 30000, // Default: 120000 (2 minutes)
 		rejectUnauthorized: false   // required to accept self-signed certificate
 	}
 }
@@ -86,7 +86,7 @@ function CucmSoapListSession(cucmServerUrl, cucmUser, cucmPassword) {
 			'Authorization': 'Basic ' + Buffer.from(cucmUser + ":" + cucmPassword).toString('base64'), 
 			'Content-Type': 'text/xml;charset=UTF-8'
 		},
-		timeout: 10000, // Default: 120000 (2 minutes)
+		timeout: 30000, // Default: 120000 (2 minutes)
 		rejectUnauthorized: false   // required to accept self-signed certificate
 	}
 }
@@ -134,7 +134,7 @@ CucmSoapGetSession.prototype.getOneFileResponse = function(file, callback) {
 				callback(null, payload)
 			});
 		}else{
-			callback('Error: ' + res.statusCode)
+			callback('Status Code: ' + res.statusCode)
 		}
 	});
 
@@ -171,7 +171,7 @@ CucmSoapSelectSession.prototype.selectLogFilesResponse = function(servicelog,tod
 				callback(null, payload)
 			});
 		}else{
-			callback('Error: ' + res.statusCode)
+			callback('Status Code: ' + res.statusCode)
 		}
 	});
 
@@ -207,7 +207,7 @@ CucmSoapListSession.prototype.listNodeServiceLogsResponse = function(callback) {
 				callback(null, payload)
 			});
 		}else{
-			callback('Error: ' + res.statusCode)
+			callback('Status Code: ' + res.statusCode)
 		}
 	});
 
