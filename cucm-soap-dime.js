@@ -134,7 +134,7 @@ CucmSoapGetSession.prototype.getOneFileResponse = function(file, callback) {
 				callback(null, payload)
 			});
 		}else{
-			callback('Status Code: ' + res.statusCode)
+			callback('Status Code: ' + res.statusCode, null)
 		}
 	});
 
