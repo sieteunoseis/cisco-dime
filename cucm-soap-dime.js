@@ -203,7 +203,7 @@ CucmSoapListSession.prototype.listNodeServiceLogsResponse = function(callback) {
 				data.push(chunk);
 			}).on('end', function() {
 				var buffer = Buffer.concat(data);
-				payload.data = buffer		
+				payload.data = buffer
 				callback(null, payload)
 			});
 		}else{
