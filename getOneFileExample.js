@@ -3,9 +3,9 @@ const ciscoSoap = require('./main')
 const fse = require('fs-extra');
 var servers = [
     {
-        'ipaddress':'170.2.96.111',
-        'username':'wordenj',
-        'password':'Timbers2019!',
+        'ipaddress':'localhost',
+        'username':'username',
+        'password':'password',
         'filename':'cm/trace/dirsync/log4j/dirsync_err00074.log'
     }
 ]
