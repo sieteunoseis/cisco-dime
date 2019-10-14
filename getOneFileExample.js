@@ -3,10 +3,10 @@ const ciscoSoap = require('./main')
 const fse = require('fs-extra');
 var servers = [
     {
-        'ipaddress':'170.2.96.93',
+        'ipaddress':'170.2.96.111',
         'username':'wordenj',
         'password':'Timbers2019!',
-        'filename':'/var/log/active/platform/cli/packets.cap'
+        'filename':'cm/trace/dirsync/log4j/dirsync_err00074.log'
     }
 ]
 
@@ -21,7 +21,7 @@ if (servers){
         Promise.map(results, function(result) {
             if (result){
                 // Change output file name to whatever you'd like
-                fse.outputFile("packets.pcap", result, err => {
+                fse.outputFile("dirsync_err00074.log", result, err => {
                     if (err) {
                         console.log(err);
                     } else {
