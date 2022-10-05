@@ -17,7 +17,7 @@ then modify whatever you want!
 
 ```
 npm install
-node getOneFileExample.js
+node test/tests.js
 ```
 
 # Acknowledgements

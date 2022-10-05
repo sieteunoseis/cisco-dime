@@ -1,126 +1,161 @@
-var cucmDime = require('./cucm-soap-dime');
-var multipart = require('./multipart');
-var parseString = require('xml2js').parseString;
+/*jshint esversion: 8 */
+var dimeFileService = require("./lib/DimeGetFileService");
+var multipart = require("./lib/multipart");
+var parseString = require("xml2js").parseString;
+
+function parseXml(xmlPart) {
+  return new Promise((resolve, reject) => {
+    parseString(
+      xmlPart,
+      { explicitArray: false, explicitRoot: false },
+      (err, result) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(
+            result
+          );
+        }
+      }
+    );
+  });
+}
 
 module.exports = {
-	getOneFile: function(ipaddress,username,password,file) {
-		let cucm = cucmDime.get(ipaddress,username,password);
-		
-		return new Promise((resolve, reject) => {
-			cucm.getOneFileResponse(file, function(err, response) {
-				if (err){
-					reject(err)
-				}
-				if (response){
-					var body = response.data
-					var boundary = multipart.getBoundary(response.header['content-type'],'"');
-					var parts = multipart.Parse(body, boundary);
-	
-					for (var i = 0; i < parts.length; i++) {
-						var part = parts[i];
-	
-						var convertPart = part.data.toString('binary').trim()
-						var output = Buffer.from(convertPart, 'binary')
-	
-						if (part.filetype !== 'text/xml') {
-							resolve(output)
-						}
-					}
-				}else{
-					reject('Response empty')
-				}
-			})
+  getOneFile: function (host, username, password, file) {
+    let dimeFunction = dimeFileService.get(username, password);
 
-			process.on('uncaughtException', function (err) {
-				reject(err);
-			});	
-		})
-	},
-	selectFiles: function(ipaddress,username,password,servicelog,todate,fromdate,timezone) {
-		
-		return new Promise(function(resolve, reject) {
-		 	// Do async job
-			let cucm = cucmDime.select(ipaddress,username,password);
-			
-			cucm.selectLogFilesResponse(servicelog,todate,fromdate,timezone, function(err, response) {
-				if (err){
-					reject(err)
-				}
-				if (response){
-					var body = response.data
-					if (response.header['content-type'].includes('multipart')){
-						var boundary = multipart.getBoundary(response.header['content-type'],'=');
-						var parts = multipart.Parse(body, boundary);
-		
-						for (var i = 0; i < parts.length; i++) {
-							var part = parts[i];
-		
-							var xmlPart = part.data.toString('binary').trim()
-							
-							parseString(xmlPart, { explicitArray: false, explicitRoot: false }, function (err, result) {
-								resolve(result['soapenv:Body']['ns1:selectLogFilesResponse']['ns1:ResultSet']['ns1:SchemaFileSelectionResult']['ns1:Node']['ns1:ServiceList']['ns1:ServiceLogs']['ns1:SetOfFiles']['ns1:File'])
-							});
-						}
-					}else{
-						var xmlPart = body.toString('binary').trim()
-							
-						parseString(xmlPart, { explicitArray: false, explicitRoot: false }, function (err, result) {
-							resolve(result['soapenv:Body']['ns1:selectLogFilesResponse']['ns1:ResultSet']['ns1:SchemaFileSelectionResult']['ns1:Node']['ns1:ServiceList']['ns1:ServiceLogs']['ns1:SetOfFiles']['ns1:File'])
-						});
-					}
-				}else{
-					reject('Response empty')
-				}
-			})
+    return new Promise((resolve, reject) => {
+      dimeFunction.getOneFileResponse(host, file, function (err, response) {
+        if (err) {
+          reject("Error: " + err);
+        }
+        if (response) {
+          var body = response.data;
+          var boundary = multipart.getBoundary(response.header, '"');
+          var parts = multipart.Parse(body, boundary);
 
-			process.on('uncaughtException', function (err) {
-				reject(err);
-			});	
+          for (var i = 0; i < parts.length; i++) {
+            var part = parts[i];
 
-		})			
-	},
-	listFiles: function(ipaddress,username,password) {
-		
-		return new Promise(function(resolve, reject) {
-		 	// Do async job
-			let cucm = cucmDime.list(ipaddress,username,password);
-			
-			cucm.listNodeServiceLogsResponse(function(err, response) {
-				if (err){
-					reject(err)
-				}
-				if (response){
-					var body = response.data
-					if (response.header['content-type'].includes('multipart')){
-						var boundary = multipart.getBoundary(response.header['content-type'],'=');
-						var parts = multipart.Parse(body, boundary);
-		
-						for (var i = 0; i < parts.length; i++) {
-							var part = parts[i];
-		
-							var xmlPart = part.data.toString('binary').trim()
-							
-							parseString(xmlPart, { explicitArray: false, explicitRoot: false }, function (err, result) {
-								resolve(result['soapenv:Body']['ns1:listNodeServiceLogsResponse']['ns1:listNodeServiceLogsReturn'][0]['ns1:ServiceLog']['ns1:item'])
-							});
-						}
-					}else{
-						var xmlPart = body.toString('binary').trim()
-							
-						parseString(xmlPart, { explicitArray: false, explicitRoot: false }, function (err, result) {
-							resolve(result['soapenv:Body']['ns1:listNodeServiceLogsResponse']['ns1:listNodeServiceLogsReturn'][0]['ns1:ServiceLog']['ns1:item'])
-						});
-						
-					}
-				}else{
-					reject('Response empty')
-				}
-			})
+            var convertPart = part.data.toString("binary").trim();
+            var output = Buffer.from(convertPart, "binary");
 
-			process.on('uncaughtException', function (err) {
-				reject(err);
-			});	
+            var returnData = {
+              data: output,
+              filename: response.filename,
+            };
 
-		})			
-	}
-}
+            if (part.filetype !== "text/xml") {
+              resolve(returnData);
+            }
+          }
+        } else {
+          reject("Response empty");
+        }
+      });
+    });
+  },
+  selectFiles: function (
+    host,
+    username,
+    password,
+    servicelog,
+    todate,
+    fromdate,
+    timezone
+  ) {
+    return new Promise(function (resolve, reject) {
+      // Do async job
+      let dimeFunction = dimeFileService.select(username, password);
+
+      dimeFunction.selectLogFilesResponse(
+        host,
+        servicelog,
+        todate,
+        fromdate,
+        timezone,
+    	async function (err, response) {
+          if (err) {
+            reject(err);
+          }
+          if (response) {
+            var body = response.data;
+            if (response.header.includes("multipart")) {
+              var boundary = multipart.getBoundary(response.header, "="); // Ex. boundary=MIMEBoundaryurn_uuid_22B4A6A78BF231B7E31664998497678
+              var parts = multipart.Parse(body, boundary);
+
+              for (let i = 0; i < parts.length; i++) {
+                var part = parts[i];
+                let xmlPart = part.data.toString("binary").trim();
+				let output = await parseXml(xmlPart);
+				resolve(output["soapenv:Body"]["ns1:selectLogFilesResponse"][
+					"ns1:ResultSet"
+				  ]["ns1:SchemaFileSelectionResult"]["ns1:Node"]["ns1:ServiceList"][
+					"ns1:ServiceLogs"
+				  ]["ns1:SetOfFiles"]["ns1:File"]);
+              }
+            } else {
+              let xmlPart = body.toString("binary").trim();
+			  let output = await parseXml(xmlPart);
+			  resolve(output["soapenv:Body"]["ns1:selectLogFilesResponse"][
+				  "ns1:ResultSet"
+				]["ns1:SchemaFileSelectionResult"]["ns1:Node"]["ns1:ServiceList"][
+				  "ns1:ServiceLogs"
+				]["ns1:SetOfFiles"]["ns1:File"]);
+            }
+          } else {
+            reject("Response empty");
+          }
+        }
+      );
+
+      process.on("uncaughtException", function (err) {
+        reject(err);
+      });
+    });
+  },
+  listFiles: function (host, username, password) {
+    return new Promise(function (resolve, reject) {
+      // Do async job
+      let dimeFunction = dimeFileService.list(username, password);
+
+      dimeFunction.listNodeServiceLogsResponse(host,async function (err, response) {
+        if (err) {
+          reject(err);
+        }
+        if (response) {
+          var body = response.data;
+          if (response.header.includes("multipart")) {
+            var boundary = multipart.getBoundary(
+              response.header,
+              "="
+            );
+            var parts = multipart.Parse(body, boundary);
+
+            for (let i = 0; i < parts.length; i++) {
+              let part = parts[i];
+              let xmlPart = part.data.toString("binary").trim();
+			  let output = await parseXml(xmlPart);
+			  resolve(output["soapenv:Body"]["ns1:listNodeServiceLogsResponse"][
+				"ns1:listNodeServiceLogsReturn"
+			  ][0]["ns1:ServiceLog"]["ns1:item"]);
+            }
+          } else {
+            let xmlPart = body.toString("binary").trim();
+			let output = await parseXml(xmlPart);
+			resolve(output["soapenv:Body"]["ns1:listNodeServiceLogsResponse"][
+			  "ns1:listNodeServiceLogsReturn"
+			][0]["ns1:ServiceLog"]["ns1:item"]);
+          }
+        } else {
+          reject("Response empty");
+        }
+      });
+
+      process.on("uncaughtException", function (err) {
+        reject(err);
+      });
+    });
+  },
+};
