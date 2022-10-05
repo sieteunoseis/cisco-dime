@@ -1,6 +1,6 @@
 {
   "name": "cisco-dime",
-  "version": "1.7.0",
+  "version": "1.7.1",
   "description": "A library to pull files from Cisco UC applications (VOS) via DIME",
   "main": "main.js",
   "scripts": {
@@ -13,7 +13,10 @@
   "keywords": [
     "cisco",
     "node",
-    "dime"
+    "dime",
+    "multipart",
+    "cucm",
+    "vos"
   ],
   "author": "Jeremy Worden <jeremy@automate.builders> (https://automate.builders/)",
   "license": "MIT",

@@ -19,16 +19,53 @@ npm i --save cisco-dime
 In Node.js:
 
 ```javascript
-const ciscoSoap = require("cisco-dime");
+const ciscoDime = require("cisco-dime");
 
+// The listNodeServiceLogs method returns the node names in the cluster and the lists of associated service names.
 (async () => {
-  var serviceLogs = await ciscoSoap
+  var serviceLogsNames = await ciscoDime
     .listNodeServiceLogs("10.10.20.1", "administrator", "ciscopsdt")
     .catch((err) => {
       console.log(err);
     });
 
+  console.log(serviceLogsNames);
+})();
+
+// The selectLogFiles method lists available service log files, or requests 'push' delivery of service log files based on a selection criteria.
+(async () => {
+  let serviceLogs = await ciscoDime
+    .selectLogFiles(
+      "10.10.20.1",
+      "administrator",
+      "ciscopsdt",
+      "Cisco CallManager",
+      "10/05/22 11:05 AM",
+      "10/04/22 11:00 AM",
+      "Client: (GMT+0:0)Greenwich Mean Time-Europe/London"
+    )
+    .catch((err) => {
+      console.log(err);
+    });
+
   console.log(serviceLogs);
+})();
+
+// The DimeGetFileService API is used to retrieve either a server or system log file through the standard Direct Internet Message Encapsulation (DIME) protocol.
+// Note: this function returns a buffer
+(async () => {
+  let fileBuffer = await ciscoDime
+    .getOneFile(
+      "10.10.20.1",
+      "administrator",
+      "ciscopsdt",
+      "/var/log/active/platform/cli/ciscotacpub.cap"
+    )
+    .catch((err) => {
+      console.log(err);
+    });
+  console.log(fileBuffer.filename);
+  console.log(fileBuffer.data);
 })();
 ```
 
@@ -38,7 +75,7 @@ const ciscoSoap = require("cisco-dime");
 npm run test
 ```
 
-Note: Test are using Cisco's DevNet sandbox information. [Cisco DevNet](https://devnetsandbox.cisco.com/)
+Note: Test are using Cisco's DevNet sandbox information. Find more information here: [Cisco DevNet](https://devnetsandbox.cisco.com/)
 
 ## Acknowledgements
 
