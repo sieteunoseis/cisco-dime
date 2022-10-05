@@ -78,6 +78,30 @@ module.exports = {
       });
     });
   },
+  getOneFileBuffer: function (host, username, password, file) {
+    return new Promise((resolve, reject) => {
+      // Let's get our DIME set up service
+      let dimeFunction = dimeFileService.get(username, password);
+      dimeFunction.getOneFile(host, file, function (err, response) {
+        if (err) {
+          reject("Error: " + err);
+        }
+        if (response) {
+          var body = response.data;
+
+          var returnData = {
+            headers: response.header,
+            body: response.data,
+          };
+
+          resolve(returnData);
+
+        } else {
+          reject("Response empty");
+        }
+      });
+    });
+  },
   selectLogFiles: function (
     host,
     username,
