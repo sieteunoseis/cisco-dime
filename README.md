@@ -1,26 +1,46 @@
 # Cisco DIME Library
 
-Simple library to pull files from a Cisco Unified Communications Manager via DIME.
+Simple library to pull files from a Cisco UC Products (VOS) via DIME.
 
 DIME information can be found at
-[Call Detail Records on Demand SOAP Service API Developer Guide](https://developer.cisco.com/docs/sxml/#!log-collection-and-dimegetfileservice-api-reference/dimegetfileservice-api).
+[Log Collection and DimeGetFileService API Reference](https://developer.cisco.com/docs/sxml/#!log-collection-and-dimegetfileservice-api-reference/dimegetfileservice-api).
 
-# Usage
+## Installation
 
-```
-git clone https://github.com/sieteunoseis/node-cisco-dime.git
-```
+Using npm:
 
-then modify whatever you want!
-
-# Example
-
-```
-npm install
-node test/tests.js
+```javascript
+npm i -g npm
+npm i --save cisco-dime
 ```
 
-# Acknowledgements
+## Usage
+
+In Node.js:
+
+```javascript
+const ciscoSoap = require("cisco-dime");
+
+(async () => {
+  var serviceLogs = await ciscoSoap
+    .listNodeServiceLogs("10.10.20.1", "administrator", "ciscopsdt")
+    .catch((err) => {
+      console.log(err);
+    });
+
+  console.log(serviceLogs);
+})();
+```
+
+## Examples
+
+```javascript
+npm run test
+```
+
+Note: Test are using Cisco's DevNet sandbox information. [Cisco DevNet](https://devnetsandbox.cisco.com/)
+
+## Acknowledgements
 
 This library is made possible by code used from:
 

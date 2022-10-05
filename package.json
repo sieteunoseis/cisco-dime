@@ -1,14 +1,14 @@
 {
   "name": "cisco-dime",
-  "version": "1.6.0",
-  "description": "A library to pull files from Cisco UC applications via DIME",
+  "version": "1.7.0",
+  "description": "A library to pull files from Cisco UC applications (VOS) via DIME",
   "main": "main.js",
   "scripts": {
-    "test": "node ./test/tests.js"
+    "test": "MODE=DEV NODE_OPTIONS=--experimental-vm-modules NODE_NO_WARNINGS=1 node ./test/tests.js"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/sieteunoseis/node-cisco-dime.git"
+    "url": "git+https://github.com/sieteunoseis/cisco-dime.git"
   },
   "keywords": [
     "cisco",
@@ -18,9 +18,9 @@
   "author": "Jeremy Worden <jeremy@automate.builders> (https://automate.builders/)",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/sieteunoseis/node-cisco-dime/issues"
+    "url": "https://github.com/sieteunoseis/cisco-dime/issues"
   },
-  "homepage": "https://github.com/sieteunoseis/node-cisco-dime#readme",
+  "homepage": "https://github.com/sieteunoseis/cisco-dime#readme",
   "devDependencies": {
     "bluebird": "^3.5.5",
     "fs-extra": "^7.0.1"
