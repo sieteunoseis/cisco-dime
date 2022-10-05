@@ -88,9 +88,12 @@ module.exports = {
         }
         if (response) {
           var body = response.data;
+          var boundary = multipart.getBoundary(response.header, '"');
+          var parts = multipart.Parse(body, boundary);
 
           var returnData = {
             headers: response.header,
+            boundary: boundary,
             body: response.data,
           };
 
