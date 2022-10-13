@@ -1,6 +1,6 @@
 {
   "name": "cisco-dime",
-  "version": "1.7.4",
+  "version": "1.7.5",
   "description": "A library to pull files from Cisco UC applications (VOS) via DIME",
   "main": "main.js",
   "scripts": {
