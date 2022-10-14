@@ -1,10 +1,10 @@
 {
   "name": "cisco-dime",
-  "version": "1.7.6",
+  "version": "1.7.7",
   "description": "A library to pull files from Cisco UC applications (VOS) via DIME",
   "main": "main.js",
   "scripts": {
-    "test": "MODE=DEV NODE_OPTIONS=--experimental-vm-modules NODE_NO_WARNINGS=1 node ./test/tests.js"
+    "test": "NODE_OPTIONS=--experimental-vm-modules NODE_NO_WARNINGS=1 NODE_TLS_REJECT_UNAUTHORIZED=0 node ./test/tests.js"
   },
   "repository": {
     "type": "git",
