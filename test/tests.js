@@ -25,7 +25,6 @@ if (servers) {
   (async () => {
     await blueBirdPromise
       .map(servers, async function (server) {
-        let currentServer = server.hostname;
         let output = await ciscoSoap
           .listNodeServiceLogs(
             server.hostname,
@@ -47,7 +46,7 @@ if (servers) {
   })();
 
   (async () => {
-    // host,username,password,servicelog,todate,fromdate,timezone
+    // host,username,password,servicelog,fromdate,todate,timezone
     await blueBirdPromise
       .map(servers, async function (server) {
         let output = await ciscoSoap
@@ -56,8 +55,8 @@ if (servers) {
             server.username,
             server.password,
             "Packet Capture Logs",
-            "10/17/2022 11:50 AM", // To Date
-            "10/17/2022 12:05 PM", // From Date
+            "10/17/2022 11:50 AM", // From Date
+            "10/17/2022 11:52 AM", // To Date
             "Client: (GMT-8:0)America/Los_Angeles" // Client: (GMT+0:0)Greenwich Mean Time-Europe/London
           )
           .catch((err) => {
@@ -70,7 +69,7 @@ if (servers) {
         console.log(
           "The selectLogFiles method lists available service log files, or requests 'push' delivery of service log files based on a selection criteria."
         );
-        var flattened = [].concat.apply([],results);
+        var flattened = [].concat.apply([],results); // Flatten results
         console.log(flattened);
       });
   })();

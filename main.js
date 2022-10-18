@@ -43,12 +43,19 @@ const keyExists = (obj, key) => {
   return false;
 };
 
-function sanitizeArray(array, key, value) {
-  const newData = array.map((o) =>
-    Object.keys(o).reduce((a, b) => ((a[b.substring(4)] = o[b]), a), {})
-  );
-  newData.map((o) => (o[key] = value));
-  return newData;
+function sanitizeOutput(array, key, value) {
+  let validArr = Array.isArray(array);
+  if (validArr) {
+    let newData = array.map((o) =>
+      Object.keys(o).reduce((a, b) => ((a[b.substring(4)] = o[b]), a), {})
+    );
+    newData.map((o) => (o[key] = value));
+    return newData;
+  } else {
+    let newData = Object.keys(array).reduce((a, b) => ((a[b.substring(4)] = array[b]), a),{});
+    newData[key] = value;
+    return newData;
+  }
 }
 
 module.exports = {
@@ -74,7 +81,7 @@ module.exports = {
             var returnData = {
               data: output,
               filename: response.filename,
-              server: host
+              server: host,
             };
 
             if (part.filetype !== "text/xml") {
@@ -92,8 +99,8 @@ module.exports = {
     username,
     password,
     servicelog,
-    todate,
     fromdate,
+    todate,
     timezone
   ) {
     return new Promise(function (resolve, reject) {
@@ -128,7 +135,7 @@ module.exports = {
                       "ns1:ServiceList"
                     ]["ns1:ServiceLogs"]["ns1:SetOfFiles"]["ns1:File"];
 
-                  resolve(sanitizeArray(returnResults, "server", host));
+                  resolve(sanitizeOutput(returnResults, "server", host));
                 } else {
                   reject("No files found on server");
                 }
@@ -143,7 +150,7 @@ module.exports = {
                   ]["ns1:SchemaFileSelectionResult"]["ns1:Node"][
                     "ns1:ServiceList"
                   ]["ns1:ServiceLogs"]["ns1:SetOfFiles"]["ns1:File"];
-                resolve(sanitizeArray(returnResults, "server", host));
+                resolve(sanitizeOutput(returnResults, "server", host));
               } else {
                 reject("No files found on server");
               }
@@ -175,11 +182,14 @@ module.exports = {
               let part = parts[i];
               let xmlPart = part.data.toString("binary").trim();
               let output = await parseXml(xmlPart);
-              let servicelogs = output["soapenv:Body"]["ns1:listNodeServiceLogsResponse"]["ns1:listNodeServiceLogsReturn"][0]["ns1:ServiceLog"]["ns1:item"]
+              let servicelogs =
+                output["soapenv:Body"]["ns1:listNodeServiceLogsResponse"][
+                  "ns1:listNodeServiceLogsReturn"
+                ][0]["ns1:ServiceLog"]["ns1:item"];
               let returnResults = {
                 count: servicelogs.length,
                 servicelogs: servicelogs,
-                server: host
+                server: host,
               };
 
               resolve(returnResults);
@@ -187,11 +197,14 @@ module.exports = {
           } else {
             let xmlPart = body.toString("binary").trim();
             let output = await parseXml(xmlPart);
-            let servicelogs = output["soapenv:Body"]["ns1:listNodeServiceLogsResponse"]["ns1:listNodeServiceLogsReturn"][0]["ns1:ServiceLog"]["ns1:item"]
+            let servicelogs =
+              output["soapenv:Body"]["ns1:listNodeServiceLogsResponse"][
+                "ns1:listNodeServiceLogsReturn"
+              ][0]["ns1:ServiceLog"]["ns1:item"];
             let returnResults = {
               count: servicelogs.length,
               servicelogs: servicelogs,
-              server: host
+              server: host,
             };
             resolve(returnResults);
           }
