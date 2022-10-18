@@ -43,6 +43,14 @@ const keyExists = (obj, key) => {
   return false;
 };
 
+function sanitizeArray(array, key, value) {
+  const newData = array.map((o) =>
+    Object.keys(o).reduce((a, b) => ((a[b.substring(4)] = o[b]), a), {})
+  );
+  newData.map((o) => (o[key] = value));
+  return newData;
+}
+
 module.exports = {
   getOneFile: function (host, username, password, file) {
     return new Promise((resolve, reject) => {
@@ -66,6 +74,7 @@ module.exports = {
             var returnData = {
               data: output,
               filename: response.filename,
+              server: host
             };
 
             if (part.filetype !== "text/xml") {
@@ -112,13 +121,14 @@ module.exports = {
                 let xmlPart = part.data.toString("binary").trim();
                 let output = await parseXml(xmlPart);
                 if (keyExists(output, "ns1:SetOfFiles")) {
-                  resolve(
+                  var returnResults =
                     output["soapenv:Body"]["ns1:selectLogFilesResponse"][
                       "ns1:ResultSet"
                     ]["ns1:SchemaFileSelectionResult"]["ns1:Node"][
                       "ns1:ServiceList"
-                    ]["ns1:ServiceLogs"]["ns1:SetOfFiles"]["ns1:File"]
-                  );
+                    ]["ns1:ServiceLogs"]["ns1:SetOfFiles"]["ns1:File"];
+
+                  resolve(sanitizeArray(returnResults, "server", host));
                 } else {
                   reject("No files found on server");
                 }
@@ -127,13 +137,13 @@ module.exports = {
               let xmlPart = body.toString("binary").trim();
               let output = await parseXml(xmlPart);
               if (keyExists(output, "ns1:SetOfFiles")) {
-                resolve(
+                let returnResults =
                   output["soapenv:Body"]["ns1:selectLogFilesResponse"][
                     "ns1:ResultSet"
                   ]["ns1:SchemaFileSelectionResult"]["ns1:Node"][
                     "ns1:ServiceList"
-                  ]["ns1:ServiceLogs"]["ns1:SetOfFiles"]["ns1:File"]
-                );
+                  ]["ns1:ServiceLogs"]["ns1:SetOfFiles"]["ns1:File"];
+                resolve(sanitizeArray(returnResults, "server", host));
               } else {
                 reject("No files found on server");
               }
@@ -165,21 +175,25 @@ module.exports = {
               let part = parts[i];
               let xmlPart = part.data.toString("binary").trim();
               let output = await parseXml(xmlPart);
+              let servicelogs = output["soapenv:Body"]["ns1:listNodeServiceLogsResponse"]["ns1:listNodeServiceLogsReturn"][0]["ns1:ServiceLog"]["ns1:item"]
+              let returnResults = {
+                count: servicelogs.length,
+                servicelogs: servicelogs,
+                server: host
+              };
 
-              resolve(
-                output["soapenv:Body"]["ns1:listNodeServiceLogsResponse"][
-                  "ns1:listNodeServiceLogsReturn"
-                ][0]["ns1:ServiceLog"]["ns1:item"]
-              );
+              resolve(returnResults);
             }
           } else {
             let xmlPart = body.toString("binary").trim();
             let output = await parseXml(xmlPart);
-            resolve(
-              output["soapenv:Body"]["ns1:listNodeServiceLogsResponse"][
-                "ns1:listNodeServiceLogsReturn"
-              ][0]["ns1:ServiceLog"]["ns1:item"]
-            );
+            let servicelogs = output["soapenv:Body"]["ns1:listNodeServiceLogsResponse"]["ns1:listNodeServiceLogsReturn"][0]["ns1:ServiceLog"]["ns1:item"]
+            let returnResults = {
+              count: servicelogs.length,
+              servicelogs: servicelogs,
+              server: host
+            };
+            resolve(returnResults);
           }
         } else {
           reject("Response empty");

@@ -21,67 +21,55 @@ var servers = [
 if (servers) {
   console.log("Running test.....");
 
-  (async () => {
-    await blueBirdPromise
-      .map(servers, async function (server) {
-        let currentServer = server.hostname;
-        let output = await ciscoSoap
-          .listNodeServiceLogs(
-            server.hostname,
-            server.username,
-            server.password
-          )
-          .catch((err) => {
-            console.log(err);
-            return false;
-          });
-        return [currentServer, output];
-      })
-      .then(function (results) {
-        console.log(
-          "The listNodeServiceLogs method returns the node names in the cluster and the lists of associated service names."
-        );
-        blueBirdPromise.map(results, function (result) {
-          if (result) {
-            console.log("Results from:", result[0]);
-            console.log("Found:", result[1].length, "services");
-            console.log(result[1]);
-          }
-        });
-      });
-  })();
+  // (async () => {
+  //   await blueBirdPromise
+  //     .map(servers, async function (server) {
+  //       let currentServer = server.hostname;
+  //       let output = await ciscoSoap
+  //         .listNodeServiceLogs(
+  //           server.hostname,
+  //           server.username,
+  //           server.password
+  //         )
+  //         .catch((err) => {
+  //           console.log(err);
+  //           return false;
+  //         });
+  //       return output;
+  //     })
+  //     .then(function (results) {
+  //       console.log(
+  //         "The listNodeServiceLogs method returns the node names in the cluster and the lists of associated service names."
+  //       );
+  //       console.log(results);
+  //     });
+  // })();
 
   (async () => {
     // host,username,password,servicelog,todate,fromdate,timezone
     await blueBirdPromise
       .map(servers, async function (server) {
-        let currentServer = server.hostname;
         let output = await ciscoSoap
           .selectLogFiles(
             server.hostname,
             server.username,
             server.password,
-            "Cisco CallManager",
-            "10/05/22 11:05 AM",
-            "10/04/22 11:00 AM",
-            "Client: (GMT+0:0)Greenwich Mean Time-Europe/London"
+            "Packet Capture Logs",
+            "10/17/2022 12:05 PM",
+            "10/17/2022 11:50 AM", 
+            "Client: (GMT-8:0)America/Los_Angeles" // Client: (GMT+0:0)Greenwich Mean Time-Europe/London
           )
           .catch((err) => {
             console.log(err, server.hostname);
             return false;
           });
-        return [currentServer, output];
+        return output;
       })
       .then(function (results) {
         console.log(
           "The selectLogFiles method lists available service log files, or requests 'push' delivery of service log files based on a selection criteria."
         );
-        blueBirdPromise.map(results, function (result) {
-          if (result[1]) {
-            console.log("Results from:", result[0]);
-            console.log(result[1]);
-          }
-        });
+        console.log(results);
       });
   })();
 
