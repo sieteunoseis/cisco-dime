@@ -2,48 +2,49 @@
 const blueBirdPromise = require("bluebird");
 const ciscoSoap = require("../main");
 const fse = require("fs-extra");
+const path = require('path');
 
 var servers = [
   {
     hostname: "10.10.20.1",
     username: "administrator",
     password: "ciscopsdt",
-    filename: "/var/log/active/platform/cli/ciscotacpub.cap",
+    filename: "/var/log/active/platform/cli/testcapture.cap0",
   },
   {
     hostname: "10.10.20.2",
     username: "administrator",
     password: "ciscopsdt",
-    filename: "/var/log/active/platform/cli/test.cap",
+    filename: "/var/log/active/platform/cli/testcapture.cap0",
   },
 ];
 
 if (servers) {
   console.log("Running test.....");
 
-  // (async () => {
-  //   await blueBirdPromise
-  //     .map(servers, async function (server) {
-  //       let currentServer = server.hostname;
-  //       let output = await ciscoSoap
-  //         .listNodeServiceLogs(
-  //           server.hostname,
-  //           server.username,
-  //           server.password
-  //         )
-  //         .catch((err) => {
-  //           console.log(err);
-  //           return false;
-  //         });
-  //       return output;
-  //     })
-  //     .then(function (results) {
-  //       console.log(
-  //         "The listNodeServiceLogs method returns the node names in the cluster and the lists of associated service names."
-  //       );
-  //       console.log(results);
-  //     });
-  // })();
+  (async () => {
+    await blueBirdPromise
+      .map(servers, async function (server) {
+        let currentServer = server.hostname;
+        let output = await ciscoSoap
+          .listNodeServiceLogs(
+            server.hostname,
+            server.username,
+            server.password
+          )
+          .catch((err) => {
+            console.log(err);
+            return false;
+          });
+        return output;
+      })
+      .then(function (results) {
+        console.log(
+          "The listNodeServiceLogs method returns the node names in the cluster and the lists of associated service names."
+        );
+        console.log(results);
+      });
+  })();
 
   (async () => {
     // host,username,password,servicelog,todate,fromdate,timezone
@@ -55,8 +56,8 @@ if (servers) {
             server.username,
             server.password,
             "Packet Capture Logs",
-            "10/17/2022 12:05 PM",
-            "10/17/2022 11:50 AM", 
+            "10/17/2022 11:50 AM", // To Date
+            "10/17/2022 12:05 PM", // From Date
             "Client: (GMT-8:0)America/Los_Angeles" // Client: (GMT+0:0)Greenwich Mean Time-Europe/London
           )
           .catch((err) => {
@@ -69,7 +70,8 @@ if (servers) {
         console.log(
           "The selectLogFiles method lists available service log files, or requests 'push' delivery of service log files based on a selection criteria."
         );
-        console.log(results);
+        var flattened = [].concat.apply([],results);
+        console.log(flattened);
       });
   })();
 
@@ -95,7 +97,11 @@ if (servers) {
             var filename = result.filename.substring(
               result.filename.lastIndexOf("/") + 1
             ); // Let's get the file name from the full path
-            fse.outputFile(filename, result.data, (err) => {
+
+            // path.join(__dirname,results.server, filename);
+            var filePath = path.join(__dirname,result.server, filename);
+
+            fse.outputFile(filePath, result.data, (err) => {
               if (err) {
                 console.log(err);
               } else {

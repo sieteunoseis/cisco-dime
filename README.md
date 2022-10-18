@@ -40,9 +40,9 @@ const ciscoDime = require("cisco-dime");
       "administrator",
       "ciscopsdt",
       "Cisco CallManager",
-      "10/05/22 11:05 AM",
-      "10/04/22 11:00 AM",
-      "Client: (GMT+0:0)Greenwich Mean Time-Europe/London"
+      "10/04/22 11:00 AM", // From Date
+      "10/05/22 11:05 AM", // To Date
+      "Client: (GMT+0:0)Greenwich Mean Time-Europe/London" // "Client: (GMT-8:0)America/Los_Angeles"
     )
     .catch((err) => {
       console.log(err);
@@ -66,6 +66,7 @@ const ciscoDime = require("cisco-dime");
     });
   console.log(fileBuffer.filename);
   console.log(fileBuffer.data);
+  console.log(fileBuffer.server);
 })();
 ```
 

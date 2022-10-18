@@ -103,8 +103,8 @@ module.exports = {
       dimeFunction.selectLogFiles(
         host,
         servicelog,
-        todate,
         fromdate,
+        todate,
         timezone,
         async function (err, response) {
           if (err) {
