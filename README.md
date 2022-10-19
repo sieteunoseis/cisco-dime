@@ -14,6 +14,20 @@ npm i -g npm
 npm i --save cisco-dime
 ```
 
+## Requirements
+
+This package uses the built in Fetch API of Node. This feature was first introduced in Node v16.15.0. You may need to enable expermential vm module. Also you can disable warnings with an optional enviromental variable.
+
+Also if you are using self signed certificates on Cisco VOS products you may need to disable TLS verification. This makes TLS, and HTTPS by extension, insecure. The use of this environment variable is strongly discouraged. Please only do this in a lab enviroment.
+
+Suggested enviromental variables:
+
+```env
+NODE_OPTIONS=--experimental-vm-modules
+NODE_NO_WARNINGS=1
+NODE_TLS_REJECT_UNAUTHORIZED=0
+```
+
 ## Usage
 
 In Node.js:
