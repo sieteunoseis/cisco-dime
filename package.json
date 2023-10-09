@@ -1,10 +1,11 @@
 {
   "name": "cisco-dime",
-  "version": "1.8.1",
+  "version": "1.8.2",
   "description": "A library to pull files from Cisco UC applications (VOS) via DIME",
   "main": "main.js",
   "scripts": {
-    "test": "NODE_OPTIONS=--experimental-vm-modules NODE_NO_WARNINGS=1 NODE_TLS_REJECT_UNAUTHORIZED=0 node ./test/tests.js"
+    "test": "NODE_OPTIONS=--experimental-vm-modules NODE_NO_WARNINGS=1 NODE_TLS_REJECT_UNAUTHORIZED=0 NODE_ENV=test node ./test/tests.js",
+    "development": "NODE_OPTIONS=--experimental-vm-modules NODE_NO_WARNINGS=1 NODE_TLS_REJECT_UNAUTHORIZED=0 NODE_ENV=development node ./test/tests.js"
   },
   "repository": {
     "type": "git",
@@ -26,7 +27,9 @@
   "homepage": "https://github.com/sieteunoseis/cisco-dime#readme",
   "devDependencies": {
     "bluebird": "^3.5.5",
-    "fs-extra": "^7.0.1"
+    "fs-extra": "^7.0.1",
+    "dotenv": "*",
+    "envalid": "^8.0.0"
   },
   "dependencies": {
     "util": "*",

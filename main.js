@@ -52,7 +52,10 @@ function sanitizeOutput(array, key, value) {
     newData.map((o) => (o[key] = value));
     return newData;
   } else {
-    let newData = Object.keys(array).reduce((a, b) => ((a[b.substring(4)] = array[b]), a),{});
+    let newData = Object.keys(array).reduce(
+      (a, b) => ((a[b.substring(4)] = array[b]), a),
+      {}
+    );
     newData[key] = value;
     return newData;
   }
@@ -182,31 +185,61 @@ module.exports = {
               let part = parts[i];
               let xmlPart = part.data.toString("binary").trim();
               let output = await parseXml(xmlPart);
-              let servicelogs =
-                output["soapenv:Body"]["ns1:listNodeServiceLogsResponse"][
-                  "ns1:listNodeServiceLogsReturn"
-                ][0]["ns1:ServiceLog"]["ns1:item"];
-              let returnResults = {
-                count: servicelogs.length,
-                servicelogs: servicelogs,
-                server: host,
-              };
+              var servicelogs;
+              var returnResults;
+              var serverName;
 
+              // Was an array returned?
+              if (
+                Array.isArray(
+                  output["soapenv:Body"]["ns1:listNodeServiceLogsResponse"][
+                    "ns1:listNodeServiceLogsReturn"
+                  ]
+                )
+              ) {
+                returnResults = [];
+                for (
+                  let j = 0;
+                  j <
+                  output["soapenv:Body"]["ns1:listNodeServiceLogsResponse"][
+                    "ns1:listNodeServiceLogsReturn"
+                  ].length;
+                  j++
+                ) {
+                  serverName =
+                    output["soapenv:Body"]["ns1:listNodeServiceLogsResponse"][
+                      "ns1:listNodeServiceLogsReturn"
+                    ][j]["ns1:name"];
+                  servicelogs =
+                    output["soapenv:Body"]["ns1:listNodeServiceLogsResponse"][
+                      "ns1:listNodeServiceLogsReturn"
+                    ][j]["ns1:ServiceLog"]["ns1:item"];
+                  let jsonData = {
+                    server: serverName,
+                    servicelogs: servicelogs,
+                    count: servicelogs.length,
+                  };
+                  returnResults.push(jsonData);
+                }
+              } else {
+                servicelogs =
+                  output["soapenv:Body"]["ns1:listNodeServiceLogsResponse"][
+                    "ns1:listNodeServiceLogsReturn"
+                  ]["ns1:ServiceLog"]["ns1:item"];
+                serverName =
+                  output["soapenv:Body"]["ns1:listNodeServiceLogsResponse"][
+                    "ns1:listNodeServiceLogsReturn"
+                  ]["ns1:name"];
+                returnResults = {
+                  server: serverName,
+                  servicelogs: servicelogs,
+                  count: servicelogs.length,
+                };
+              }
               resolve(returnResults);
             }
           } else {
-            let xmlPart = body.toString("binary").trim();
-            let output = await parseXml(xmlPart);
-            let servicelogs =
-              output["soapenv:Body"]["ns1:listNodeServiceLogsResponse"][
-                "ns1:listNodeServiceLogsReturn"
-              ][0]["ns1:ServiceLog"]["ns1:item"];
-            let returnResults = {
-              count: servicelogs.length,
-              servicelogs: servicelogs,
-              server: host,
-            };
-            resolve(returnResults);
+            reject("Error with response");
           }
         } else {
           reject("Response empty");
