@@ -2,6 +2,8 @@
  * TypeScript declarations for cisco-dime
  */
 
+// --- Configuration Types ---
+
 export interface DimeConfig {
   /** Request timeout in milliseconds (default: 30000) */
   timeout?: number;
@@ -16,6 +18,18 @@ export interface GetOneFileOptions extends DimeConfig {
   onProgress?: (progress: ProgressInfo) => void;
 }
 
+export interface GetMultipleFilesOptions extends GetOneFileOptions {
+  /** Maximum concurrent downloads (default: 5) */
+  concurrency?: number;
+  /** Called when each individual file completes or fails */
+  onFileComplete?: (error: Error | null, result: FileResult | null, index: number) => void;
+}
+
+export interface SelectLogFilesMultiOptions extends DimeConfig {
+  /** Maximum concurrent host queries (default: 5) */
+  concurrency?: number;
+}
+
 export interface ProgressInfo {
   /** Total bytes read so far */
   bytesRead: number;
@@ -25,6 +39,15 @@ export interface ProgressInfo {
   percent: number | null;
 }
 
+export interface ProgressInfoWithFile extends ProgressInfo {
+  /** Filename being downloaded */
+  filename: string;
+  /** Index of the file in the batch */
+  fileIndex: number;
+}
+
+// --- Result Types ---
+
 export interface FileResult {
   /** File content as a Buffer */
   data: Buffer;
@@ -32,6 +55,30 @@ export interface FileResult {
   filename: string;
   /** Server hostname the file was retrieved from */
   server: string;
+}
+
+export interface FileResultOrError {
+  /** File content (present on success) */
+  data?: Buffer;
+  /** Error (present on failure) */
+  error?: Error;
+  /** Original filename/path requested */
+  filename: string;
+  /** Server hostname */
+  server: string;
+}
+
+export interface FileStreamResult {
+  /** Content-Type header from response */
+  header: string;
+  /** Original filename/path requested */
+  filename: string;
+  /** Server hostname */
+  server: string;
+  /** Total content length from headers, or null if unknown */
+  contentLength: number | null;
+  /** Raw readable stream of the response body */
+  body: ReadableStream;
 }
 
 export interface LogFile {
@@ -74,14 +121,35 @@ export interface SelectLogFilesOptions extends DimeConfig {
   timezone: string;
 }
 
+// --- Error Types ---
+
+export class DimeError extends Error {
+  name: "DimeError";
+  host: string | null;
+  statusCode: number | null;
+  constructor(message: string, options?: { host?: string; statusCode?: number });
+}
+
+export class DimeAuthError extends DimeError {
+  name: "DimeAuthError";
+}
+
+export class DimeNotFoundError extends DimeError {
+  name: "DimeNotFoundError";
+}
+
+export class DimeTimeoutError extends DimeError {
+  name: "DimeTimeoutError";
+}
+
+export class DimeRateLimitError extends DimeError {
+  name: "DimeRateLimitError";
+}
+
+// --- Methods ---
+
 /**
  * Retrieve a single file from a Cisco UC product via DIME.
- * @param host - Hostname or IP address
- * @param username - AXL username
- * @param password - AXL password
- * @param file - Full file path on the server
- * @param options - Optional configuration (timeout, retries, onProgress)
- * @returns File content, filename, and server info
  */
 export function getOneFile(
   host: string,
@@ -92,17 +160,32 @@ export function getOneFile(
 ): Promise<FileResult>;
 
 /**
+ * Retrieve a single file as a readable stream (avoids buffering large files in memory).
+ */
+export function getOneFileStream(
+  host: string,
+  username: string,
+  password: string,
+  file: string,
+  options?: DimeConfig
+): Promise<FileStreamResult>;
+
+/**
+ * Download multiple files in parallel with concurrency control.
+ * Returns results in the same order as the input files array.
+ * Failed downloads return an error object instead of throwing.
+ */
+export function getMultipleFiles(
+  host: string,
+  username: string,
+  password: string,
+  files: string[],
+  options?: GetMultipleFilesOptions
+): Promise<Array<FileResult | FileResultOrError>>;
+
+/**
  * List available service log files matching selection criteria.
- *
  * Supports both positional parameters and a named options object.
- *
- * @example
- * // Positional parameters
- * await selectLogFiles(host, username, password, servicelog, fromdate, todate, timezone);
- *
- * @example
- * // Named parameters
- * await selectLogFiles({ host, username, password, servicelog, fromdate, todate, timezone });
  */
 export function selectLogFiles(
   host: string,
@@ -117,12 +200,22 @@ export function selectLogFiles(
 export function selectLogFiles(options: SelectLogFilesOptions): Promise<LogFile[]>;
 
 /**
+ * Select log files across multiple hosts and merge results.
+ * Failed hosts are silently skipped (return empty results).
+ */
+export function selectLogFilesMulti(
+  hosts: string[],
+  username: string,
+  password: string,
+  servicelog: string,
+  fromdate: string,
+  todate: string,
+  timezone: string,
+  options?: SelectLogFilesMultiOptions
+): Promise<LogFile[]>;
+
+/**
  * List node names in the cluster and associated service names.
- * @param host - Hostname or IP address
- * @param username - AXL username
- * @param password - AXL password
- * @param options - Optional configuration (timeout, retries)
- * @returns Node service log information (single object or array for multi-node clusters)
  */
 export function listNodeServiceLogs(
   host: string,
@@ -133,14 +226,10 @@ export function listNodeServiceLogs(
 
 /**
  * Get the stored session cookie for a host.
- * @param host - Hostname to retrieve cookie for
- * @returns Cookie string or null
  */
 export function getCookie(host: string): string | null;
 
 /**
  * Set a session cookie for a host.
- * @param host - Hostname to store cookie for
- * @param cookie - Cookie string value
  */
 export function setCookie(host: string, cookie: string): void;

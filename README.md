@@ -49,7 +49,7 @@ import { listNodeServiceLogs, selectLogFiles, getOneFile } from "cisco-dime";
 Full type declarations are included out of the box.
 
 ```typescript
-import { listNodeServiceLogs, selectLogFiles, getOneFile } from "cisco-dime";
+import { listNodeServiceLogs, selectLogFiles, getOneFile, DimeError } from "cisco-dime";
 ```
 
 ### listNodeServiceLogs
@@ -104,6 +104,25 @@ const serviceLogs = await ciscoDime
   });
 ```
 
+### selectLogFilesMulti
+
+Query log files across multiple hosts at once. Results are merged and flattened. Failed hosts are silently skipped.
+
+```javascript
+const allLogs = await ciscoDime.selectLogFilesMulti(
+  ["10.10.20.1", "10.10.20.2"],
+  "administrator",
+  "ciscopsdt",
+  "Cisco CallManager",
+  "10/04/22 11:00 AM",
+  "10/05/22 11:05 AM",
+  "Client: (GMT-8:0)America/Los_Angeles",
+  { concurrency: 3 }
+);
+
+console.log(allLogs); // merged array from both hosts
+```
+
 ### getOneFile
 
 Retrieves a server or system log file via the DIME protocol. Returns a buffer.
@@ -145,6 +164,63 @@ const fileBuffer = await ciscoDime
   });
 ```
 
+### getOneFileStream
+
+Returns a readable stream instead of buffering the entire file in memory. Useful for large log files.
+
+```javascript
+const stream = await ciscoDime.getOneFileStream(
+  "10.10.20.1",
+  "administrator",
+  "ciscopsdt",
+  "/var/log/active/platform/cli/ciscotacpub.cap"
+);
+
+console.log(stream.filename);        // original path
+console.log(stream.contentLength);    // size in bytes (or null)
+
+// Pipe to a file
+const fs = require("fs");
+const writer = fs.createWriteStream("./output.cap");
+const reader = stream.body.getReader();
+
+while (true) {
+  const { done, value } = await reader.read();
+  if (done) break;
+  writer.write(Buffer.from(value));
+}
+writer.end();
+```
+
+### getMultipleFiles
+
+Download multiple files in parallel with concurrency control. Failed downloads return error objects instead of throwing.
+
+```javascript
+const results = await ciscoDime.getMultipleFiles(
+  "10.10.20.1",
+  "administrator",
+  "ciscopsdt",
+  [
+    "/var/log/active/platform/cli/file1.cap",
+    "/var/log/active/platform/cli/file2.cap",
+    "/var/log/active/platform/cli/file3.cap",
+  ],
+  {
+    concurrency: 3,
+    onFileComplete: (err, result, index) => {
+      if (err) {
+        console.log(`File ${index} failed:`, err.message);
+      } else {
+        console.log(`File ${index} done: ${result.filename}`);
+      }
+    },
+  }
+);
+
+// results[i] is either { data, filename, server } or { error, filename, server }
+```
+
 ### Cookie/Session Management
 
 Session cookies are automatically captured and reused across requests to the same host, avoiding unnecessary re-authentication.
@@ -160,16 +236,52 @@ const cookie = getCookie("10.10.20.1");
 setCookie("10.10.20.1", "JSESSIONID=abc123");
 ```
 
+### Error Handling
+
+All errors are instances of typed error classes for programmatic handling:
+
+```javascript
+const { DimeError, DimeAuthError, DimeNotFoundError, DimeTimeoutError, DimeRateLimitError } = require("cisco-dime");
+
+try {
+  await ciscoDime.getOneFile("10.10.20.1", "admin", "wrong-password", "/some/file");
+} catch (err) {
+  if (err instanceof DimeAuthError) {
+    console.log("Bad credentials for", err.host);
+  } else if (err instanceof DimeTimeoutError) {
+    console.log("Request timed out");
+  } else if (err instanceof DimeNotFoundError) {
+    console.log("File not found");
+  } else if (err instanceof DimeRateLimitError) {
+    console.log("Rate limited after all retries");
+  } else if (err instanceof DimeError) {
+    console.log("DIME error:", err.message, "status:", err.statusCode);
+  }
+}
+```
+
+### Debug Logging
+
+Enable debug output by setting the `DEBUG` environment variable:
+
+```bash
+DEBUG=cisco-dime node your-app.js
+```
+
+This logs request details, retry attempts, cookie captures, and timing information.
+
 ## Configuration Options
 
 All methods accept an optional configuration object as the last parameter:
 
-| Option       | Default | Description                                              |
-| ------------ | ------- | -------------------------------------------------------- |
-| `timeout`    | `30000` | Request timeout in milliseconds                          |
-| `retries`    | `3`     | Number of retry attempts on failure                      |
-| `retryDelay` | `1000`  | Base delay between retries in ms (doubles each attempt)  |
-| `onProgress` | `null`  | Progress callback (getOneFile only)                      |
+| Option           | Default | Description                                                  |
+| ---------------- | ------- | ------------------------------------------------------------ |
+| `timeout`        | `30000` | Request timeout in milliseconds                              |
+| `retries`        | `3`     | Number of retry attempts on failure                          |
+| `retryDelay`     | `1000`  | Base delay between retries in ms (doubles each attempt)      |
+| `onProgress`     | `null`  | Progress callback (getOneFile/getMultipleFiles only)         |
+| `concurrency`    | `5`     | Max parallel requests (getMultipleFiles/selectLogFilesMulti) |
+| `onFileComplete` | `null`  | Per-file completion callback (getMultipleFiles only)         |
 
 ```javascript
 // Example with configuration
@@ -181,15 +293,30 @@ const result = await ciscoDime.listNodeServiceLogs(
 );
 ```
 
-## Examples
+## Testing
 
-```javascript
-npm run test
+```bash
+# Unit tests (no CUCM required, safe for CI)
+npm run test:unit
+
+# Integration tests (requires CUCM credentials in env/test.env)
+npm test
 ```
 
-Note: Test are using Cisco's DevNet sandbox information. Find more information here: [Cisco DevNet](https://devnetsandbox.cisco.com/)
+Note: Integration tests use Cisco's DevNet sandbox information. Find more information here: [Cisco DevNet](https://devnetsandbox.cisco.com/)
 
 ## Changelog
+
+### v1.10.0
+
+#### New Features
+
+- **`getMultipleFiles()`** — batch download multiple files in parallel with concurrency control
+- **`getOneFileStream()`** — stream large files to disk without buffering in memory
+- **`selectLogFilesMulti()`** — query log files across multiple hosts with merged results
+- **Custom error types** — `DimeError`, `DimeAuthError`, `DimeNotFoundError`, `DimeTimeoutError`, `DimeRateLimitError` for programmatic error handling
+- **Debug logging** — opt-in via `DEBUG=cisco-dime` environment variable
+- **Unit tests** — mocked SOAP response tests that run in CI without CUCM credentials
 
 ### v1.9.0
 
@@ -201,7 +328,7 @@ Note: Test are using Cisco's DevNet sandbox information. Find more information h
 - **Implicit global variables** — fixed `for` loops in multipart parser that leaked globals
 - **Null safety** — `listNodeServiceLogs` no longer crashes when a node has no service logs
 
-#### New Features
+#### v1.9.0 New Features
 
 - **TypeScript support** — full type declarations in `types/index.d.ts`
 - **ESM support** — `main.mjs` wrapper + `exports` field in `package.json`

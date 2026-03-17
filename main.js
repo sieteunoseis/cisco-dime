@@ -2,6 +2,7 @@
 var dimeFileService = require("./lib/DimeGetFileService");
 var multipart = require("./lib/multipart");
 var parseString = require("xml2js").parseString;
+var errors = require("./lib/errors");
 
 function parseXml(xmlPart) {
   return new Promise((resolve, reject) => {
@@ -78,7 +79,7 @@ module.exports = {
       let dimeFunction = dimeFileService.get(username, password, config);
       dimeFunction.getOneFile(host, file, function (err, response) {
         if (err) {
-          return reject("Error: " + err);
+          return reject(err instanceof errors.DimeError ? err : new errors.DimeError("Error: " + err, { host: host }));
         }
         if (response) {
           var body = response.data;
@@ -101,13 +102,97 @@ module.exports = {
               return resolve(returnData);
             }
           }
-          reject("No non-XML parts found in response");
+          return reject(new errors.DimeNotFoundError("No non-XML parts found in response", { host: host }));
         } else {
-          reject("Response empty");
+          return reject(new errors.DimeError("Response empty", { host: host }));
         }
       }, onProgress);
     });
   },
+
+  /**
+   * Retrieve a single file as a readable stream (avoids buffering large files in memory).
+   * @param {string} host - Hostname or IP
+   * @param {string} username - AXL username
+   * @param {string} password - AXL password
+   * @param {string} file - Full file path on server
+   * @param {object} [options] - Optional config: { timeout, retries, retryDelay }
+   * @returns {Promise<{header: string, filename: string, server: string, contentLength: number|null, body: ReadableStream}>}
+   */
+  getOneFileStream: function (host, username, password, file, options) {
+    var config = options || {};
+    var dimeFunction = dimeFileService.get(username, password, config);
+    return dimeFunction.getOneFileStream(host, file);
+  },
+
+  /**
+   * Download multiple files in parallel with concurrency control.
+   * @param {string} host - Hostname or IP
+   * @param {string} username - AXL username
+   * @param {string} password - AXL password
+   * @param {string[]} files - Array of file paths to download
+   * @param {object} [options] - Optional config: { timeout, retries, retryDelay, concurrency, onProgress, onFileComplete }
+   * @returns {Promise<Array<{data: Buffer, filename: string, server: string}|{error: Error, filename: string, server: string}>>}
+   */
+  getMultipleFiles: function (host, username, password, files, options) {
+    var self = this;
+    var config = options || {};
+    var concurrency = config.concurrency || 5;
+
+    return new Promise(function (resolve) {
+      var results = new Array(files.length);
+      var running = 0;
+      var nextIndex = 0;
+      var completed = 0;
+
+      function runNext() {
+        while (running < concurrency && nextIndex < files.length) {
+          (function (index) {
+            var file = files[index];
+            running++;
+
+            var fileOptions = Object.assign({}, config);
+            if (config.onProgress) {
+              fileOptions.onProgress = function (progress) {
+                config.onProgress(Object.assign({ filename: file, fileIndex: index }, progress));
+              };
+            }
+
+            self.getOneFile(host, username, password, file, fileOptions)
+              .then(function (result) {
+                results[index] = result;
+                if (typeof config.onFileComplete === "function") {
+                  config.onFileComplete(null, result, index);
+                }
+              })
+              .catch(function (err) {
+                results[index] = { error: err, filename: file, server: host };
+                if (typeof config.onFileComplete === "function") {
+                  config.onFileComplete(err, null, index);
+                }
+              })
+              .finally(function () {
+                running--;
+                completed++;
+                if (completed === files.length) {
+                  resolve(results);
+                } else {
+                  runNext();
+                }
+              });
+          })(nextIndex);
+          nextIndex++;
+        }
+      }
+
+      if (files.length === 0) {
+        return resolve([]);
+      }
+
+      runNext();
+    });
+  },
+
   /**
    * List available service log files matching selection criteria.
    *
@@ -160,7 +245,7 @@ module.exports = {
         timezone,
         async function (err, response) {
           if (err) {
-            return reject(err);
+            return reject(err instanceof errors.DimeError ? err : new errors.DimeError(String(err), { host: host }));
           }
           if (response) {
             var body = response.data;
@@ -182,7 +267,7 @@ module.exports = {
 
                   return resolve(sanitizeOutput(returnResults, "server", host));
                 } else {
-                  return reject("No files found on server");
+                  return reject(new errors.DimeNotFoundError("No files found on server", { host: host }));
                 }
               }
             } else {
@@ -197,16 +282,82 @@ module.exports = {
                   ]["ns1:ServiceLogs"]["ns1:SetOfFiles"]["ns1:File"];
                 return resolve(sanitizeOutput(returnResults, "server", host));
               } else {
-                return reject("No files found on server");
+                return reject(new errors.DimeNotFoundError("No files found on server", { host: host }));
               }
             }
           } else {
-            return reject("Response empty");
+            return reject(new errors.DimeError("Response empty", { host: host }));
           }
         }
       );
     });
   },
+
+  /**
+   * Select log files across multiple hosts and merge results.
+   * @param {string[]} hosts - Array of hostnames
+   * @param {string} username - AXL username
+   * @param {string} password - AXL password
+   * @param {string} servicelog - Service log name
+   * @param {string} fromdate - Start date
+   * @param {string} todate - End date
+   * @param {string} timezone - Timezone string
+   * @param {object} [options] - Optional config: { timeout, retries, retryDelay, concurrency }
+   * @returns {Promise<Array>} Merged and flattened results from all hosts
+   */
+  selectLogFilesMulti: function (hosts, username, password, servicelog, fromdate, todate, timezone, options) {
+    var self = this;
+    var config = options || {};
+    var concurrency = config.concurrency || 5;
+
+    return new Promise(function (resolve) {
+      var results = new Array(hosts.length);
+      var running = 0;
+      var nextIndex = 0;
+      var completed = 0;
+
+      function runNext() {
+        while (running < concurrency && nextIndex < hosts.length) {
+          (function (index) {
+            var host = hosts[index];
+            running++;
+
+            self.selectLogFiles(host, username, password, servicelog, fromdate, todate, timezone)
+              .then(function (result) {
+                results[index] = Array.isArray(result) ? result : [result];
+              })
+              .catch(function () {
+                results[index] = [];
+              })
+              .finally(function () {
+                running--;
+                completed++;
+                if (completed === hosts.length) {
+                  // Flatten all results into a single array
+                  var merged = [];
+                  for (var i = 0; i < results.length; i++) {
+                    for (var j = 0; j < results[i].length; j++) {
+                      merged.push(results[i][j]);
+                    }
+                  }
+                  resolve(merged);
+                } else {
+                  runNext();
+                }
+              });
+          })(nextIndex);
+          nextIndex++;
+        }
+      }
+
+      if (hosts.length === 0) {
+        return resolve([]);
+      }
+
+      runNext();
+    });
+  },
+
   /**
    * List node names and associated service names in the cluster.
    * @param {string} host - Hostname or IP
@@ -222,7 +373,7 @@ module.exports = {
 
       dimeFunction.listNodeServiceLogs(host, async function (err, response) {
         if (err) {
-          return reject(err);
+          return reject(err instanceof errors.DimeError ? err : new errors.DimeError(String(err), { host: host }));
         }
         if (response) {
           var body = response.data;
@@ -292,15 +443,23 @@ module.exports = {
               return resolve(returnResults);
             }
           } else {
-            return reject("Error with response");
+            return reject(new errors.DimeError("Error with response", { host: host }));
           }
         } else {
-          return reject("Response empty");
+          return reject(new errors.DimeError("Response empty", { host: host }));
         }
       });
     });
   },
+
   // Expose cookie management for consumers
   getCookie: dimeFileService.getCookie,
   setCookie: dimeFileService.setCookie,
+
+  // Expose error types for instanceof checks
+  DimeError: errors.DimeError,
+  DimeAuthError: errors.DimeAuthError,
+  DimeNotFoundError: errors.DimeNotFoundError,
+  DimeTimeoutError: errors.DimeTimeoutError,
+  DimeRateLimitError: errors.DimeRateLimitError,
 };
