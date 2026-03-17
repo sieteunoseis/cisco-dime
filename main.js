@@ -62,13 +62,23 @@ function sanitizeOutput(array, key, value) {
 }
 
 module.exports = {
-  getOneFile: function (host, username, password, file) {
+  /**
+   * Retrieve a single file from a Cisco UC product via DIME.
+   * @param {string} host - Hostname or IP
+   * @param {string} username - AXL username
+   * @param {string} password - AXL password
+   * @param {string} file - Full file path on server
+   * @param {object} [options] - Optional config: { timeout, retries, retryDelay, onProgress }
+   * @returns {Promise<{data: Buffer, filename: string, server: string}>}
+   */
+  getOneFile: function (host, username, password, file, options) {
     return new Promise((resolve, reject) => {
-      // Let's get our DIME set up service
-      let dimeFunction = dimeFileService.get(username, password);
+      var config = options || {};
+      var onProgress = config.onProgress || null;
+      let dimeFunction = dimeFileService.get(username, password, config);
       dimeFunction.getOneFile(host, file, function (err, response) {
         if (err) {
-          reject("Error: " + err);
+          return reject("Error: " + err);
         }
         if (response) {
           var body = response.data;
@@ -88,17 +98,28 @@ module.exports = {
             };
 
             if (part.filetype !== "text/xml") {
-              resolve(returnData);
+              return resolve(returnData);
             }
           }
+          reject("No non-XML parts found in response");
         } else {
           reject("Response empty");
         }
-      });
+      }, onProgress);
     });
   },
+  /**
+   * List available service log files matching selection criteria.
+   *
+   * Supports both positional and named parameters:
+   *   selectLogFiles(host, username, password, servicelog, fromdate, todate, timezone)
+   *   selectLogFiles({ host, username, password, servicelog, fromdate, todate, timezone, timeout, retries, retryDelay })
+   *
+   * @param {string|object} hostOrOptions - Hostname or options object
+   * @returns {Promise<Array>}
+   */
   selectLogFiles: function (
-    host,
+    hostOrOptions,
     username,
     password,
     servicelog,
@@ -106,9 +127,30 @@ module.exports = {
     todate,
     timezone
   ) {
+    var host, config;
+
+    if (typeof hostOrOptions === "object" && hostOrOptions !== null) {
+      // Named parameters
+      var opts = hostOrOptions;
+      host = opts.host;
+      username = opts.username;
+      password = opts.password;
+      servicelog = opts.servicelog;
+      fromdate = opts.fromdate;
+      todate = opts.todate;
+      timezone = opts.timezone;
+      config = {
+        timeout: opts.timeout,
+        retries: opts.retries,
+        retryDelay: opts.retryDelay,
+      };
+    } else {
+      host = hostOrOptions;
+      config = {};
+    }
+
     return new Promise(function (resolve, reject) {
-      // Let's get our DIME set up service
-      let dimeFunction = dimeFileService.select(username, password);
+      let dimeFunction = dimeFileService.select(username, password, config);
 
       dimeFunction.selectLogFiles(
         host,
@@ -118,12 +160,12 @@ module.exports = {
         timezone,
         async function (err, response) {
           if (err) {
-            reject(err);
+            return reject(err);
           }
           if (response) {
             var body = response.data;
             if (response.header.includes("multipart")) {
-              var boundary = multipart.getBoundary(response.header, "="); // Ex. boundary=MIMEBoundaryurn_uuid_22B4A6A78BF231B7E31664998497678
+              var boundary = multipart.getBoundary(response.header, "=");
               var parts = multipart.Parse(body, boundary);
 
               for (let i = 0; i < parts.length; i++) {
@@ -138,9 +180,9 @@ module.exports = {
                       "ns1:ServiceList"
                     ]["ns1:ServiceLogs"]["ns1:SetOfFiles"]["ns1:File"];
 
-                  resolve(sanitizeOutput(returnResults, "server", host));
+                  return resolve(sanitizeOutput(returnResults, "server", host));
                 } else {
-                  reject("No files found on server");
+                  return reject("No files found on server");
                 }
               }
             } else {
@@ -153,27 +195,34 @@ module.exports = {
                   ]["ns1:SchemaFileSelectionResult"]["ns1:Node"][
                     "ns1:ServiceList"
                   ]["ns1:ServiceLogs"]["ns1:SetOfFiles"]["ns1:File"];
-                resolve(sanitizeOutput(returnResults, "server", host));
+                return resolve(sanitizeOutput(returnResults, "server", host));
               } else {
-                reject("No files found on server");
+                return reject("No files found on server");
               }
             }
           } else {
-            reject("Response empty");
+            return reject("Response empty");
           }
         }
       );
     });
   },
-  listNodeServiceLogs: function (host, username, password) {
+  /**
+   * List node names and associated service names in the cluster.
+   * @param {string} host - Hostname or IP
+   * @param {string} username - AXL username
+   * @param {string} password - AXL password
+   * @param {object} [options] - Optional config: { timeout, retries, retryDelay }
+   * @returns {Promise<Array|object>}
+   */
+  listNodeServiceLogs: function (host, username, password, options) {
+    var config = options || {};
     return new Promise(function (resolve, reject) {
-      // Let's get our DIME set up service
-      let dimeFunction = dimeFileService.list(username, password);
+      let dimeFunction = dimeFileService.list(username, password, config);
 
-      // Let's call the List Node Service Logs
       dimeFunction.listNodeServiceLogs(host, async function (err, response) {
         if (err) {
-          reject(err);
+          return reject(err);
         }
         if (response) {
           var body = response.data;
@@ -210,10 +259,12 @@ module.exports = {
                     output["soapenv:Body"]["ns1:listNodeServiceLogsResponse"][
                       "ns1:listNodeServiceLogsReturn"
                     ][j]["ns1:name"];
-                  servicelogs =
+                  var serviceLog =
                     output["soapenv:Body"]["ns1:listNodeServiceLogsResponse"][
                       "ns1:listNodeServiceLogsReturn"
-                    ][j]["ns1:ServiceLog"]["ns1:item"];
+                    ][j]["ns1:ServiceLog"];
+                  servicelogs = serviceLog ? serviceLog["ns1:item"] || [] : [];
+                  if (!Array.isArray(servicelogs)) servicelogs = [servicelogs];
                   let jsonData = {
                     server: serverName,
                     servicelogs: servicelogs,
@@ -222,10 +273,12 @@ module.exports = {
                   returnResults.push(jsonData);
                 }
               } else {
-                servicelogs =
+                var singleServiceLog =
                   output["soapenv:Body"]["ns1:listNodeServiceLogsResponse"][
                     "ns1:listNodeServiceLogsReturn"
-                  ]["ns1:ServiceLog"]["ns1:item"];
+                  ]["ns1:ServiceLog"];
+                servicelogs = singleServiceLog ? singleServiceLog["ns1:item"] || [] : [];
+                if (!Array.isArray(servicelogs)) servicelogs = [servicelogs];
                 serverName =
                   output["soapenv:Body"]["ns1:listNodeServiceLogsResponse"][
                     "ns1:listNodeServiceLogsReturn"
@@ -236,15 +289,18 @@ module.exports = {
                   count: servicelogs.length,
                 };
               }
-              resolve(returnResults);
+              return resolve(returnResults);
             }
           } else {
-            reject("Error with response");
+            return reject("Error with response");
           }
         } else {
-          reject("Response empty");
+          return reject("Response empty");
         }
       });
     });
   },
+  // Expose cookie management for consumers
+  getCookie: dimeFileService.getCookie,
+  setCookie: dimeFileService.setCookie,
 };

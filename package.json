@@ -1,8 +1,17 @@
 {
   "name": "cisco-dime",
-  "version": "1.8.3",
+  "version": "1.9.0",
   "description": "A library to pull files from Cisco UC applications (VOS) via DIME",
   "main": "main.js",
+  "module": "main.mjs",
+  "types": "types/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./main.mjs",
+      "require": "./main.js",
+      "types": "./types/index.d.ts"
+    }
+  },
   "scripts": {
     "test": "NODE_OPTIONS=--experimental-vm-modules NODE_NO_WARNINGS=1 NODE_TLS_REJECT_UNAUTHORIZED=0 NODE_ENV=test node ./test/tests.js",
     "development": "NODE_OPTIONS=--experimental-vm-modules NODE_NO_WARNINGS=1 NODE_TLS_REJECT_UNAUTHORIZED=0 NODE_ENV=development node ./test/tests.js"
@@ -19,7 +28,7 @@
     "cucm",
     "vos"
   ],
-  "author": "Jeremy Worden <jeremy@automate.builders> (https://automate.builders/)",
+  "author": "Jeremy Worden <jeremy.worden@gmail.com> (https://github.com/sieteunoseis)",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/sieteunoseis/cisco-dime/issues"
@@ -32,7 +41,6 @@
     "envalid": "^8.0.0"
   },
   "dependencies": {
-    "util": "*",
     "xml2js": "*"
   }
 }
