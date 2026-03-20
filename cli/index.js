@@ -7,6 +7,7 @@ program
   .name("cisco-dime")
   .description("CLI for downloading log files from Cisco UC products via DIME")
   .version(version)
+  .enablePositionalOptions()
   .option("--format <type>", "output format: table, json, toon, csv", "table")
   .option("--host <host>", "CUCM hostname (overrides config/env)")
   .option("--username <user>", "CUCM username (overrides config/env)")

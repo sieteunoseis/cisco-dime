@@ -2,7 +2,7 @@ const configUtil = require("../utils/config.js");
 const { printResult, printError } = require("../utils/output.js");
 
 module.exports = function (program) {
-  const config = program.command("config").description("Manage CUCM cluster configurations and presets");
+  const config = program.command("config").description("Manage CUCM cluster configurations and presets").passThroughOptions();
 
   config
     .command("add <name>")
