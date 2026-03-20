@@ -40,7 +40,7 @@ cisco-dime list-services
 | syslog | messages, CiscoSyslog |
 | tomcat | Tomcat, Tomcat Security |
 | oamp | Cisco Unified OS Admin, Cisco Unified CM Admin |
-| audit | Cisco Audit Event Service |
+| audit | Cisco Audit Logs |
 
 ## Common Workflows
 

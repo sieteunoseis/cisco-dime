@@ -227,7 +227,7 @@ const results = await ciscoDime.getMultipleFiles(
 
 ### Cookie/Session Management
 
-Session cookies are automatically captured and reused across requests to the same host, avoiding unnecessary re-authentication.
+Session cookies are automatically captured and reused across requests to the same host and service, avoiding unnecessary re-authentication. Cookies are scoped per SOAP service endpoint — the download service (DimeGetFileService) and log collection service (LogCollectionPortTypeService) maintain separate sessions.
 
 ```javascript
 // Cookies are managed automatically, but you can also manage them manually:
@@ -406,6 +406,8 @@ cisco-dime select sip-traces --last 30m --download --output-dir ./logs --organiz
 
 Time values accept flexible formats: `30m`, `2h`, `1d`, `now`, ISO 8601 (`2026-03-19T08:00:00`), or date-time strings (`2026-03-19 08:00`).
 
+Active log files (`.gzo` extension — files still being written to by CUCM) are automatically filtered out. Use `--include-active` to include them.
+
 #### `download`
 
 Download files from a prior `select` by index, range, or all at once. Or fetch a specific file directly without a prior select.
@@ -435,7 +437,7 @@ cisco-dime download --all --decompress        # gunzips .gz files after download
 | `syslog` | messages, CiscoSyslog |
 | `tomcat` | Tomcat, Tomcat Security |
 | `oamp` | Cisco Unified OS Admin, Cisco Unified CM Admin |
-| `audit` | Cisco Audit Event Service |
+| `audit` | Cisco Audit Logs |
 
 Add custom presets with `cisco-dime config add-preset <name> --services "Svc1,Svc2"`. Custom presets can override built-in names.
 
@@ -464,6 +466,7 @@ Use `--format <format>` (default: `table`) on any command:
 | `--output-dir <path>` | Directory to save downloaded files |
 | `--organize` | Save files into `<host>/<date>/` subdirectory structure |
 | `--decompress` | Gunzip `.gz` files after download |
+| `--include-active` | Include active `.gzo` log files (still being written to) |
 | `--no-audit` | Disable audit logging for this command |
 | `--debug` | Enable debug logging |
 
@@ -497,9 +500,33 @@ The skill is located at `skills/cisco-dime-cli/SKILL.md` and covers cluster conf
 
 ## Changelog
 
-### v1.10.0
+### v2.0.0
+
+#### Breaking Changes
+
+- **`selectLogFiles()` and `listNodeServiceLogs()` now always return arrays**, even for single results. Previously, a single result was returned as a bare object. Callers that used `Array.isArray(result) ? result : [result]` can remove that check.
 
 #### New Features
+
+- **CLI** — full command-line interface: `config`, `list-services`, `select`, `download`
+- **Built-in presets** — `sip-traces`, `cti-traces`, `curri-logs`, `syslog`, `tomcat`, `oamp`, `audit` + custom presets
+- **Flexible time parser** — `30m`, `2h`, `1d`, `now`, ISO 8601, date-time strings
+- **Indexed select-then-download workflow** — select results are numbered and cached for easy download by index
+- **Multi-cluster config** — named clusters at `~/.cisco-dime/config.json` with Secret Server (`<ss:ID:field>`) support
+- **Output formats** — `--format table|json|toon|csv`
+- **Active file filtering** — `.gzo` files (still being written to) are skipped by default, `--include-active` to include
+- **File organization** — `--organize` saves downloads into `<host>/<date>/` subdirectories
+- **Decompression** — `--decompress` gunzips `.gz` files with truncated file detection
+- **Streaming for large files** — files >50MB are streamed to disk without buffering in memory
+- **Audit trail** — JSONL audit log at `~/.cisco-dime/audit.jsonl` with 10MB rotation
+- **skills.sh skill** — AI agent skill at `skills/cisco-dime-cli/SKILL.md`
+
+#### Bug Fixes
+
+- **Session cookie scoping** — cookies are now scoped per SOAP service endpoint (DimeGetFileService vs LogCollectionPortTypeService). Previously, a cookie from `selectLogFiles` would cause HTTP 500 errors on subsequent `getOneFile` calls.
+- **Pinned dependencies** — `xml2js` pinned to `^0.6.2`, `dotenv` to `^16.4.5` (was `*`)
+
+### v1.10.0
 
 - **`getMultipleFiles()`** — batch download multiple files in parallel with concurrency control
 - **`getOneFileStream()`** — stream large files to disk without buffering in memory
@@ -510,15 +537,13 @@ The skill is located at `skills/cisco-dime-cli/SKILL.md` and covers cluster conf
 
 ### v1.9.0
 
-#### Bug Fixes
-
 - **Shared mutable state** — options objects were reused across requests, causing race conditions in concurrent calls
 - **XML injection** — file names and service log names with special characters (`&`, `<`, etc.) are now properly escaped
 - **Missing return after reject** — execution no longer falls through after promise rejection
 - **Implicit global variables** — fixed `for` loops in multipart parser that leaked globals
 - **Null safety** — `listNodeServiceLogs` no longer crashes when a node has no service logs
 
-#### v1.9.0 New Features
+**New in v1.9.0:**
 
 - **TypeScript support** — full type declarations in `types/index.d.ts`
 - **ESM support** — `main.mjs` wrapper + `exports` field in `package.json`
@@ -528,7 +553,7 @@ The skill is located at `skills/cisco-dime-cli/SKILL.md` and covers cluster conf
 - **Retry with exponential backoff** — automatic retries on failure/rate limiting (HTTP 429/503)
 - **Progress callback** — `getOneFile()` accepts `onProgress` for tracking download progress
 
-#### Cleanup
+**Cleanup:**
 
 - Removed `util` dependency (replaced with XML-safe string templating)
 - Removed unused `sessionIdArr` variable
