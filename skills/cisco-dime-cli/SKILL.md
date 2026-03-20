@@ -16,12 +16,18 @@ cisco-dime config add <name> --host <host> --username <user> --password <pass> -
 cisco-dime config test
 ```
 
+For Secret Server integration:
+
+```bash
+cisco-dime config add <name> --host '<ss:ID:host>' --username '<ss:ID:username>' --password '<ss:ID:password>' --insecure
+```
+
 Or use environment variables:
 
 ```bash
-export CUCM_HOST=10.0.0.1
-export CUCM_USERNAME=admin
-export CUCM_PASSWORD=secret
+export CUCM_HOST=<host>
+export CUCM_USERNAME=<user>
+export CUCM_PASSWORD=<pass>
 ```
 
 ## Discover Available Logs
