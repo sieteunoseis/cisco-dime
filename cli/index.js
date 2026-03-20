@@ -32,5 +32,6 @@ require("./commands/config.js")(program);
 require("./commands/list-services.js")(program);
 require("./commands/select.js")(program);
 require("./commands/download.js")(program);
+require("./commands/analyze.js")(program);
 
 program.parse();
