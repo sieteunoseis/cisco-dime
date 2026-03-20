@@ -12,7 +12,7 @@ const BUILT_IN_PRESETS = {
   "syslog": { services: ["messages", "CiscoSyslog"] },
   "tomcat": { services: ["Tomcat", "Tomcat Security"] },
   "oamp": { services: ["Cisco Unified OS Admin", "Cisco Unified CM Admin"] },
-  "audit": { services: ["Cisco Audit Event Service"] },
+  "audit": { services: ["Cisco Audit Logs"] },
 };
 
 function getConfigDir() {
