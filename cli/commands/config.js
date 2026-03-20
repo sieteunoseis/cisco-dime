@@ -2,18 +2,24 @@ const configUtil = require("../utils/config.js");
 const { printResult, printError } = require("../utils/output.js");
 
 module.exports = function (program) {
-  const config = program.command("config").description("Manage CUCM cluster configurations and presets").passThroughOptions();
+  const config = program.command("config").description("Manage CUCM cluster configurations and presets");
 
   config
     .command("add <name>")
-    .description("Add a CUCM cluster")
-    .requiredOption("--host <host>", "CUCM hostname or IP")
-    .requiredOption("--username <user>", "CUCM username")
-    .requiredOption("--password <pass>", "CUCM password")
+    .description("Add a CUCM cluster (requires global --host, --username, --password)")
     .option("--insecure", "skip TLS verification for this cluster")
-    .action((name, opts) => {
+    .action((name, opts, cmd) => {
       try {
-        configUtil.addCluster(name, opts);
+        const globalOpts = cmd.optsWithGlobals();
+        const host = globalOpts.host;
+        const username = globalOpts.username;
+        const password = globalOpts.password;
+        if (!host) throw new Error("Missing required option: --host");
+        if (!username) throw new Error("Missing required option: --username");
+        if (!password) throw new Error("Missing required option: --password");
+        const clusterOpts = { host, username, password };
+        if (opts.insecure || globalOpts.insecure) clusterOpts.insecure = true;
+        configUtil.addCluster(name, clusterOpts);
         console.log(`Cluster "${name}" added successfully.`);
       } catch (err) { printError(err); }
     });
