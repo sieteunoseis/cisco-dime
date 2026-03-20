@@ -306,16 +306,18 @@ async function runTests() {
     return originalFetch(newUrl, options);
   };
 
-  await testAsync("listNodeServiceLogs returns single node data", async function () {
+  await testAsync("listNodeServiceLogs returns single node data as array", async function () {
     var result = await ciscoDime.listNodeServiceLogs(mockHost, "admin", "admin", { retries: 0, timeout: 5000 });
-    assert.strictEqual(result.server, "cucm-pub.example.com");
-    assert.ok(Array.isArray(result.servicelogs));
-    assert.strictEqual(result.count, 2);
-    assert.strictEqual(result.servicelogs[0], "Cisco CallManager");
-    assert.strictEqual(result.servicelogs[1], "Cisco Tftp");
+    assert.ok(Array.isArray(result), "should always return an array");
+    assert.strictEqual(result.length, 1);
+    assert.strictEqual(result[0].server, "cucm-pub.example.com");
+    assert.ok(Array.isArray(result[0].servicelogs));
+    assert.strictEqual(result[0].count, 2);
+    assert.strictEqual(result[0].servicelogs[0], "Cisco CallManager");
+    assert.strictEqual(result[0].servicelogs[1], "Cisco Tftp");
   });
 
-  await testAsync("selectLogFiles returns file list", async function () {
+  await testAsync("selectLogFiles returns file list as array", async function () {
     var result = await ciscoDime.selectLogFiles(
       mockHost, "admin", "admin",
       "Cisco CallManager",
@@ -323,12 +325,11 @@ async function runTests() {
       "03/17/26 11:00 AM",
       "Client: (GMT-8:0)America/Los_Angeles"
     );
-    assert.ok(Array.isArray(result) || typeof result === "object");
-    // Single file should have name property
-    var file = Array.isArray(result) ? result[0] : result;
-    assert.strictEqual(file.name, "SDL001_100_001.txt.gz");
-    assert.strictEqual(file.filesize, "1024");
-    assert.strictEqual(file.server, mockHost);
+    assert.ok(Array.isArray(result), "should always return an array");
+    assert.strictEqual(result.length, 1);
+    assert.strictEqual(result[0].name, "SDL001_100_001.txt.gz");
+    assert.strictEqual(result[0].filesize, "1024");
+    assert.strictEqual(result[0].server, mockHost);
   });
 
   await testAsync("selectLogFiles with named parameters works", async function () {

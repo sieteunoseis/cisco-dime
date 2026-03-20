@@ -222,7 +222,7 @@ export function listNodeServiceLogs(
   username: string,
   password: string,
   options?: DimeConfig
-): Promise<NodeServiceLog | NodeServiceLog[]>;
+): Promise<NodeServiceLog[]>;
 
 /**
  * Get the stored session cookie for a host.

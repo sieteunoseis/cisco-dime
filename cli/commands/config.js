@@ -70,7 +70,7 @@ module.exports = function (program) {
         const dime = require("../../main.js");
         if (connConfig.insecure) { process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"; }
         const result = await dime.listNodeServiceLogs(connConfig.host, connConfig.username, connConfig.password);
-        const nodes = Array.isArray(result) ? result : [result];
+        const nodes = result;
         const totalServices = nodes.reduce((sum, n) => sum + n.count, 0);
         console.log(`Connection successful. Found ${nodes.length} node(s) with ${totalServices} service log(s).`);
       } catch (err) { printError(err); }

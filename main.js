@@ -45,21 +45,14 @@ const keyExists = (obj, key) => {
 };
 
 function sanitizeOutput(array, key, value) {
-  let validArr = Array.isArray(array);
-  if (validArr) {
-    let newData = array.map((o) =>
-      Object.keys(o).reduce((a, b) => ((a[b.substring(4)] = o[b]), a), {})
-    );
-    newData.map((o) => (o[key] = value));
-    return newData;
-  } else {
-    let newData = Object.keys(array).reduce(
-      (a, b) => ((a[b.substring(4)] = array[b]), a),
-      {}
-    );
-    newData[key] = value;
-    return newData;
-  }
+  // Always return an array for consistent API behavior.
+  // xml2js returns a single object when there's only one element.
+  let items = Array.isArray(array) ? array : [array];
+  let newData = items.map((o) =>
+    Object.keys(o).reduce((a, b) => ((a[b.substring(4)] = o[b]), a), {})
+  );
+  newData.map((o) => (o[key] = value));
+  return newData;
 }
 
 module.exports = {
@@ -434,11 +427,11 @@ module.exports = {
                   output["soapenv:Body"]["ns1:listNodeServiceLogsResponse"][
                     "ns1:listNodeServiceLogsReturn"
                   ]["ns1:name"];
-                returnResults = {
+                returnResults = [{
                   server: serverName,
                   servicelogs: servicelogs,
                   count: servicelogs.length,
-                };
+                }];
               }
               return resolve(returnResults);
             }

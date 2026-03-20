@@ -16,7 +16,7 @@ module.exports = function (program) {
         if (globalOpts.debug) { process.env.DEBUG = "cisco-dime"; }
 
         const result = await dime.listNodeServiceLogs(connConfig.host, connConfig.username, connConfig.password);
-        const nodes = Array.isArray(result) ? result : [result];
+        const nodes = result;
 
         if (globalOpts.format === "table") {
           for (const node of nodes) {

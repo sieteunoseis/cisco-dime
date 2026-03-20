@@ -46,7 +46,7 @@ module.exports = function (program) {
         let hosts = [connConfig.host];
         if (cmdOpts.allNodes) {
           const nodeResult = await dime.listNodeServiceLogs(connConfig.host, connConfig.username, connConfig.password);
-          const nodes = Array.isArray(nodeResult) ? nodeResult : [nodeResult];
+          const nodes = nodeResult;
           hosts = nodes.map((n) => n.server);
         } else if (cmdOpts.hosts) {
           hosts = cmdOpts.hosts.split(",").map((h) => h.trim());
