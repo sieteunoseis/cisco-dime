@@ -406,6 +406,8 @@ cisco-dime select sip-traces --last 30m --download --output-dir ./logs --organiz
 
 Time values accept flexible formats: `30m`, `2h`, `1d`, `now`, ISO 8601 (`2026-03-19T08:00:00`), or date-time strings (`2026-03-19 08:00`).
 
+**Timezone:** The `--timezone` flag accepts IANA timezone names (e.g., `America/Chicago`). If omitted, your system's local timezone is used. The timezone tells CUCM how to interpret the date range — make sure it matches the timezone context of your `--from`/`--to` values.
+
 Active log files (`.gzo` extension — files still being written to by CUCM) are automatically filtered out. Use `--include-active` to include them.
 
 #### `download`
