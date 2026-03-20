@@ -9,6 +9,10 @@ function stripGzExtension(filename) {
 }
 
 function tryDecompress(buffer, filename) {
+  // .gzo files are plain text (active logs still being written) — just rename
+  if (filename.endsWith(".gzo")) {
+    return { success: true, data: buffer, outputName: stripGzExtension(filename) };
+  }
   try {
     const data = gunzipSync(buffer);
     return { success: true, data, outputName: stripGzExtension(filename) };
