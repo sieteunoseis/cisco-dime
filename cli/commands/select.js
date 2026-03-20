@@ -19,6 +19,7 @@ module.exports = function (program) {
     .option("--output-dir <dir>", "directory to save downloaded files")
     .option("--organize", "organize downloads into host/date subdirectories")
     .option("--decompress", "decompress .gz files after download")
+    .option("--include-active", "include active log files (.gzo) that are still being written to")
     .action(async (serviceOrPreset, cmdOpts) => {
       const start = Date.now();
       try {
@@ -64,8 +65,22 @@ module.exports = function (program) {
           if (Array.isArray(files)) { allFiles.push(...files); }
         }
 
+        // Filter out active (.gzo) files unless --include-active
+        let filtered = allFiles;
+        if (!cmdOpts.includeActive) {
+          const before = allFiles.length;
+          filtered = allFiles.filter((f) => {
+            const name = f.absolutepath || f.name || "";
+            return !name.endsWith(".gzo");
+          });
+          const skipped = before - filtered.length;
+          if (skipped > 0) {
+            process.stderr.write(`Skipped ${skipped} active log file${skipped !== 1 ? "s" : ""} (.gzo). Use --include-active to include them.\n`);
+          }
+        }
+
         // Add index to each file
-        const indexed = allFiles.map((f, i) => ({
+        const indexed = filtered.map((f, i) => ({
           index: i + 1,
           filename: f.absolutepath || f.name || "",
           size: f.filesize || "",

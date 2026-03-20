@@ -1,9 +1,11 @@
 const { gunzipSync } = require("node:zlib");
 
-function isGzFile(filename) { return filename.endsWith(".gz"); }
+function isGzFile(filename) { return filename.endsWith(".gz") || filename.endsWith(".gzo"); }
 
 function stripGzExtension(filename) {
-  return filename.endsWith(".gz") ? filename.slice(0, -3) : filename;
+  if (filename.endsWith(".gzo")) return filename.slice(0, -4);
+  if (filename.endsWith(".gz")) return filename.slice(0, -3);
+  return filename;
 }
 
 function tryDecompress(buffer, filename) {

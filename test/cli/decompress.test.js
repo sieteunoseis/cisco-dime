@@ -24,8 +24,14 @@ describe("decompress utility", () => {
     assert.equal(decompress.stripGzExtension("file.txt.gz"), "file.txt");
     assert.equal(decompress.stripGzExtension("file.txt"), "file.txt");
   });
+  it("strips .gzo extension for output name", () => {
+    assert.equal(decompress.stripGzExtension("file.txt.gzo"), "file.txt");
+  });
   it("isGzFile detects .gz extension", () => {
     assert.equal(decompress.isGzFile("file.gz"), true);
     assert.equal(decompress.isGzFile("file.txt"), false);
+  });
+  it("isGzFile detects .gzo extension", () => {
+    assert.equal(decompress.isGzFile("file.txt.gzo"), true);
   });
 });
