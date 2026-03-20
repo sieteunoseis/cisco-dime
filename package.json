@@ -38,6 +38,10 @@
     "url": "https://github.com/sieteunoseis/cisco-dime/issues"
   },
   "homepage": "https://github.com/sieteunoseis/cisco-dime#readme",
+  "funding": {
+    "type": "individual",
+    "url": "https://buymeacoffee.com/automatebldrs"
+  },
   "devDependencies": {
     "bluebird": "^3.5.5",
     "dotenv": "^16.4.5",
