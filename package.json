@@ -5,6 +5,9 @@
   "main": "main.js",
   "module": "main.mjs",
   "types": "types/index.d.ts",
+  "bin": {
+    "cisco-dime": "./bin/cisco-dime.js"
+  },
   "exports": {
     ".": {
       "import": "./main.mjs",
@@ -37,12 +40,16 @@
   "homepage": "https://github.com/sieteunoseis/cisco-dime#readme",
   "devDependencies": {
     "bluebird": "^3.5.5",
-    "dotenv": "*",
+    "dotenv": "^16.4.5",
     "envalid": "^8.0.0",
     "fs-extra": "^7.0.1"
   },
   "dependencies": {
+    "@toon-format/toon": "^2.1.0",
+    "cli-table3": "^0.6.5",
+    "commander": "^14.0.3",
+    "csv-stringify": "^6.7.0",
     "debug": "^4.4.3",
-    "xml2js": "*"
+    "xml2js": "^0.6.2"
   }
 }

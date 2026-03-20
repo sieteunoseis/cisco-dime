@@ -1,5 +1,9 @@
 # Cisco DIME Library
 
+[![npm version](https://img.shields.io/npm/v/cisco-dime.svg)](https://www.npmjs.com/package/cisco-dime)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Node.js Version](https://img.shields.io/node/v/cisco-dime.svg)](https://nodejs.org)
+
 Simple library to pull files from a Cisco UC Products (VOS) via DIME.
 
 DIME information can be found at
@@ -304,6 +308,192 @@ npm test
 ```
 
 Note: Integration tests use Cisco's DevNet sandbox information. Find more information here: [Cisco DevNet](https://devnetsandbox.cisco.com/)
+
+---
+
+## CLI
+
+The `cisco-dime` package also ships a command-line interface for discovering service logs, selecting log files by time range or preset, and downloading files from Cisco UC products (VOS) — all without writing any code.
+
+### CLI Installation
+
+```bash
+npm install -g cisco-dime
+```
+
+### Quick Start
+
+```bash
+# 1. Add a cluster config
+cisco-dime config add lab --host 10.0.0.1 --username admin --password secret
+
+# 2. Set it as the active cluster
+cisco-dime config use lab
+
+# 3. Browse available service logs
+cisco-dime list-services
+
+# 4. Select log files (results are numbered and cached)
+cisco-dime select sip-traces --last 30m
+
+# 5. Download by index
+cisco-dime download 1,2,3
+```
+
+Or skip the select step and grab files in one shot:
+
+```bash
+cisco-dime select sip-traces --last 30m --download --output-dir ./logs
+```
+
+### Commands Overview
+
+#### `config`
+
+Manage named cluster configurations and custom presets.
+
+```bash
+cisco-dime config add <name> --host <h> --username <u> --password <p>
+cisco-dime config use <name>            # set active cluster
+cisco-dime config list                  # list all clusters
+cisco-dime config show                  # show active cluster (masks passwords)
+cisco-dime config remove <name>         # remove a cluster
+cisco-dime config test                  # test connectivity to active cluster
+cisco-dime config add-preset <name> --services "Svc1,Svc2"
+cisco-dime config list-presets          # list built-in + custom presets
+cisco-dime config remove-preset <name>  # remove a custom preset
+```
+
+#### `list-services`
+
+Discover all nodes in the cluster and their available service log names.
+
+```bash
+cisco-dime list-services
+cisco-dime list-services --cluster lab
+```
+
+```text
+Node: cucm-pub.lab.local
+  - Cisco CallManager
+  - Cisco CTIManager
+  - Cisco Audit Event Service
+Node: cucm-sub1.lab.local
+  - Cisco CallManager
+  - Cisco CTIManager
+```
+
+#### `select`
+
+Find log files matching a service name or preset within a time window. Results are numbered and cached to `~/.cisco-dime/last-select.json` for use with `download`.
+
+```bash
+# By service name
+cisco-dime select "Cisco CallManager" --last 30m
+cisco-dime select "Cisco CallManager" --from "2026-03-19 08:00" --to "2026-03-19 09:00"
+
+# By preset
+cisco-dime select sip-traces --last 2h
+cisco-dime select audit --last 1d
+
+# Multi-host
+cisco-dime select sip-traces --last 30m --all-nodes
+cisco-dime select sip-traces --last 30m --hosts 10.0.0.1,10.0.0.2
+
+# Select and immediately download
+cisco-dime select sip-traces --last 30m --download --output-dir ./logs --organize
+```
+
+Time values accept flexible formats: `30m`, `2h`, `1d`, `now`, ISO 8601 (`2026-03-19T08:00:00`), or date-time strings (`2026-03-19 08:00`).
+
+#### `download`
+
+Download files from a prior `select` by index, range, or all at once. Or fetch a specific file directly without a prior select.
+
+```bash
+# By index or range (from last select)
+cisco-dime download 1,3,5
+cisco-dime download 1-5
+cisco-dime download --all
+
+# By explicit path (no prior select needed)
+cisco-dime download --file "/activelog/cm/trace/..." --host 10.0.0.1
+
+# With options
+cisco-dime download --all --output-dir ./logs
+cisco-dime download --all --organize          # saves to ./hostname/2026-03-19/filename
+cisco-dime download --all --decompress        # gunzips .gz files after download
+```
+
+### Built-in Presets
+
+| Preset | Service Log Name(s) |
+| --- | --- |
+| `sip-traces` | Cisco CallManager, Cisco CTIManager |
+| `cti-traces` | Cisco CTIManager |
+| `curri-logs` | Cisco Extended Functions |
+| `syslog` | messages, CiscoSyslog |
+| `tomcat` | Tomcat, Tomcat Security |
+| `oamp` | Cisco Unified OS Admin, Cisco Unified CM Admin |
+| `audit` | Cisco Audit Event Service |
+
+Add custom presets with `cisco-dime config add-preset <name> --services "Svc1,Svc2"`. Custom presets can override built-in names.
+
+### Output Formats
+
+Use `--format <format>` (default: `table`) on any command:
+
+| Format | Description |
+| ------ | ----------- |
+| `table` | Human-readable table (default) |
+| `json` | Pretty-printed JSON for scripting |
+| `toon` | Token-efficient format for AI agents |
+| `csv` | CSV for Excel/spreadsheet workflows |
+
+### Key Flags
+
+| Flag | Description |
+| ---- | ----------- |
+| `--format table\|json\|toon\|csv` | Output format (default: `table`) |
+| `--cluster <name>` | Use a specific named cluster for this command |
+| `--host <host>` | Override config/env host |
+| `--username <user>` | Override config/env username |
+| `--password <pass>` | Override config/env password |
+| `--insecure` | Skip TLS certificate verification (lab use only) |
+| `--concurrency <n>` | Parallel operations (default: 5) |
+| `--output-dir <path>` | Directory to save downloaded files |
+| `--organize` | Save files into `<host>/<date>/` subdirectory structure |
+| `--decompress` | Gunzip `.gz` files after download |
+| `--no-audit` | Disable audit logging for this command |
+| `--debug` | Enable debug logging |
+
+### Authentication Precedence
+
+1. CLI flags (`--host`, `--username`, `--password`, `--cluster`)
+2. Environment variables (`CUCM_HOST`, `CUCM_USERNAME`, `CUCM_PASSWORD`)
+3. Config file (`~/.cisco-dime/config.json`)
+
+```bash
+# Using environment variables (useful for CI/CD)
+export CUCM_HOST=10.0.0.1
+export CUCM_USERNAME=admin
+export CUCM_PASSWORD=secret
+cisco-dime select sip-traces --last 30m
+```
+
+Config values support `<ss:ID:field>` Secret Server placeholders (resolved via `ss-cli` at runtime). Plain text values work without `ss-cli` installed.
+
+### Skills.sh Skill
+
+An AI agent skill is available for teaching agents how to use the CLI effectively:
+
+```bash
+npx skillsadd sieteunoseis/cisco-dime
+```
+
+The skill is located at `skills/cisco-dime-cli/SKILL.md` and covers cluster configuration, preset usage, time-based selection, multi-host queries, the select-then-download workflow, and output format recommendations for AI contexts.
+
+---
 
 ## Changelog
 
