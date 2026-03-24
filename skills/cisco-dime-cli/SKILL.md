@@ -1,6 +1,10 @@
 ---
 name: cisco-dime-cli
 description: Use when managing Cisco CUCM log files via the cisco-dime CLI — selecting, downloading, and listing service logs from Cisco UC products via DIME.
+license: MIT
+metadata:
+  author: sieteunoseis
+  version: "1.0.0"
 ---
 
 # cisco-dime CLI
@@ -30,23 +34,23 @@ export CUCM_USERNAME=<user>
 export CUCM_PASSWORD=<pass>
 ```
 
-## Discover Available Logs
+### Discover Available Logs
 
 ```bash
 cisco-dime list-services
 ```
 
-## Built-in Presets
+### Built-in Presets
 
-| Preset | Services |
-|--------|----------|
-| sip-traces | Cisco CallManager, Cisco CTIManager |
-| cti-traces | Cisco CTIManager |
-| curri-logs | Cisco Extended Functions |
-| syslog | messages, CiscoSyslog |
-| tomcat | Tomcat, Tomcat Security |
-| oamp | Cisco Unified OS Admin, Cisco Unified CM Admin |
-| audit | Cisco Audit Logs |
+| Preset     | Services                                       |
+| ---------- | ---------------------------------------------- |
+| sip-traces | Cisco CallManager, Cisco CTIManager            |
+| cti-traces | Cisco CTIManager                               |
+| curri-logs | Cisco Extended Functions                       |
+| syslog     | messages, CiscoSyslog                          |
+| tomcat     | Tomcat, Tomcat Security                        |
+| oamp       | Cisco Unified OS Admin, Cisco Unified CM Admin |
+| audit      | Cisco Audit Logs                               |
 
 ## Common Workflows
 
@@ -89,7 +93,7 @@ cisco-dime download --all --decompress --output-dir ./logs --insecure
 - `--format toon` — token-efficient for AI agents (recommended)
 - `--format csv` — for spreadsheets
 
-## Key Flags
+## Global Flags
 
 - `--insecure` — required for self-signed CUCM certs (most environments)
 - `--all-nodes` — query all cluster nodes automatically
