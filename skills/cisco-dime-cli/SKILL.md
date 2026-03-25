@@ -13,10 +13,11 @@ CLI for downloading log files from Cisco UC products (VOS) via DIME.
 
 ## Setup
 
-Configure a cluster (one-time):
+Configure a cluster (one-time, interactive prompt for password — never pass credentials on the command line):
 
 ```bash
-cisco-dime config add <name> --host <host> --username <user> --password <pass> --insecure
+cisco-dime config add <name> --host <host> --username <user> --insecure
+# You will be prompted securely for the password
 cisco-dime config test
 ```
 
@@ -26,7 +27,7 @@ For Secret Server integration:
 cisco-dime config add <name> --host '<ss:ID:host>' --username '<ss:ID:username>' --password '<ss:ID:password>' --insecure
 ```
 
-Or use environment variables:
+Or use environment variables (set via your shell profile, a `.env` file, or a secrets manager — never hardcode credentials):
 
 ```bash
 export CUCM_HOST=<host>
